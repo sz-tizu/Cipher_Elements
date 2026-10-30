@@ -15,8 +15,19 @@
 <body class="page-home">
 <header class="topbar"><div class="topbar-inner">
 <a class="wordmark" href="index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<div class="topbar-right">
 <nav aria-label="サイト"><a href="index.html" aria-current="page">ホーム</a><a href="guide.html">学習ガイド</a><a href="index.html#lectures">講義</a><a href="labs/01-lab.html">ラボ</a></nav>
+<button type="button" class="search-open" data-search-open aria-label="サイト内を検索"><span aria-hidden="true">⌕</span>検索<kbd>/</kbd></button>
+</div>
 </div></header>
+<dialog class="search" data-root="" aria-label="サイト内検索">
+<form method="dialog" class="search-box" role="search">
+<input type="search" class="search-input" placeholder="キーワードで検索（例: 逆元、IND-CPA、誕生日）" aria-label="検索語" autocomplete="off" spellcheck="false">
+<button type="submit" class="search-close" aria-label="閉じる">Esc</button>
+</form>
+<p class="search-status" aria-live="polite"></p>
+<ol class="search-results"></ol>
+</dialog>
 <main class="home">
 <section class="hero">
 <p class="eyebrow">暗号基礎論 · 学習ノート</p>
@@ -42,6 +53,7 @@
 <span class="lec-meta">1〜2週<span class="chip chip-published">公開中</span></span>
 <span class="lec-title">数学的基盤</span>
 <span class="lec-desc">整数論・代数・確率・計算量。RSA と Diffie-Hellman が動く理由を、手で計算して説明できるようにする回。</span>
+<span class="readmeter" data-progress-for="lectures/01-math-foundations.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/02-formal-foundations.html">
 <span class="lec-n">02</span>
@@ -49,6 +61,7 @@
 <span class="lec-meta">3〜4週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">暗号の形式的基礎</span>
 <span class="lec-desc">「安全」を攻撃者とのゲームとして定義し、仮定への帰着で証明する。現代暗号の流儀を身につける、全体の背骨になる回。</span>
+<span class="readmeter" data-progress-for="lectures/02-formal-foundations.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/03-symmetric.html">
 <span class="lec-n">03</span>
@@ -56,6 +69,7 @@
 <span class="lec-meta">5〜6週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">共通鍵暗号</span>
 <span class="lec-desc">ブロック暗号を PRP（疑似ランダム置換）として扱い、その上に運用モードを載せて IND-CPA を示す、という流れを押さえるのがこの Step の中心です。</span>
+<span class="readmeter" data-progress-for="lectures/03-symmetric.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/04-hash-mac-aead.html">
 <span class="lec-n">04</span>
@@ -63,6 +77,7 @@
 <span class="lec-meta">7週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">ハッシュ・MAC・AEAD</span>
 <span class="lec-desc">機密性だけでは不十分で、改ざん検知まで含めた AEAD（認証付き暗号）を標準にするのが現代の実務です。</span>
+<span class="readmeter" data-progress-for="lectures/04-hash-mac-aead.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/05-public-key.html">
 <span class="lec-n">05</span>
@@ -70,6 +85,7 @@
 <span class="lec-meta">8〜9週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">公開鍵暗号</span>
 <span class="lec-desc">教科書 RSA は暗号方式ではなく「素材」にすぎない、という感覚をここで掴みます。</span>
+<span class="readmeter" data-progress-for="lectures/05-public-key.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/06-signatures-pki.html">
 <span class="lec-n">06</span>
@@ -77,6 +93,7 @@
 <span class="lec-meta">10週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">署名・PKI・ランダムオラクル</span>
 <span class="lec-desc">署名は「公開鍵で検証できる MAC」ではなく、第三者への証明力（否認防止）を持つ別物として学びます。</span>
+<span class="readmeter" data-progress-for="lectures/06-signatures-pki.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/07-protocols.html">
 <span class="lec-n">07</span>
@@ -84,6 +101,7 @@
 <span class="lec-meta">11〜13週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">プロトコルと実装</span>
 <span class="lec-desc">部品が安全でも、組み合わせ方と実装で壊れるのが実務の現実です。</span>
+<span class="readmeter" data-progress-for="lectures/07-protocols.html"></span>
 </span></a></li><li class="lec lec-planned">
 <a href="lectures/08-advanced.html">
 <span class="lec-n">08</span>
@@ -91,6 +109,7 @@
 <span class="lec-meta">14〜16週<span class="chip chip-planned">準備中</span></span>
 <span class="lec-title">発展と前回学習との接続</span>
 <span class="lec-desc">基礎を一巡したあとで、前回学んだ楕円曲線と耐量子暗号が、ここまでの枠組みのどこに収まるかを確認します。</span>
+<span class="readmeter" data-progress-for="lectures/08-advanced.html"></span>
 </span></a></li></ol>
 </section>
 
@@ -98,7 +117,7 @@
 <div>
 <h2>補足ノート</h2>
 <p class="block-lead">講義で引っかかりやすい箇所を、1つの問いに絞って掘り下げたノートです。</p>
-<ul class="note-list"><li><a href="notes/extended-euclid.html"><span class="note-title">拡張ユークリッドの互除法を直感で掴む</span><span class="note-desc">ax + by = gcd の係数を、数直線のジャンプと「レシピ」の帳簿で理解する補足ノート。</span></a></li><li><a href="notes/gcd-invariance.html"><span class="note-title">gcd(a, b) = gcd(b, r) はなぜ成り立つか</span><span class="note-desc">互除法の土台になる一歩を、公約数の集合が変わらないことから証明する補足ノート。</span></a></li></ul>
+<ul class="note-list"><li><a href="notes/extended-euclid.html"><span class="note-title">拡張ユークリッドの互除法を直感で掴む</span><span class="note-desc">ax + by = gcd の係数を、数直線のジャンプと「レシピ」の帳簿で理解する補足ノート。</span><span class="readmeter" data-progress-for="notes/extended-euclid.html"></span></a></li><li><a href="notes/gcd-invariance.html"><span class="note-title">gcd(a, b) = gcd(b, r) はなぜ成り立つか</span><span class="note-desc">互除法の土台になる一歩を、公約数の集合が変わらないことから証明する補足ノート。</span><span class="readmeter" data-progress-for="notes/gcd-invariance.html"></span></a></li></ul>
 </div>
 <div>
 <h2>ラボ</h2>
@@ -126,5 +145,6 @@
 <p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
 </div></footer>
 <script src="assets/widgets.js" defer></script>
+<script src="assets/site.js" defer></script>
 </body>
 </html>

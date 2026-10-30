@@ -153,8 +153,19 @@ def topbar(root: str, active: str) -> str:
     )
     return f"""<header class="topbar"><div class="topbar-inner">
 <a class="wordmark" href="{root}index.html"><span class="wm-mark" aria-hidden="true">≡</span>{SITE_NAME}</a>
+<div class="topbar-right">
 <nav aria-label="サイト">{links}</nav>
-</div></header>"""
+<button type="button" class="search-open" data-search-open aria-label="サイト内を検索"><span aria-hidden="true">⌕</span>検索<kbd>/</kbd></button>
+</div>
+</div></header>
+<dialog class="search" data-root="{root}" aria-label="サイト内検索">
+<form method="dialog" class="search-box" role="search">
+<input type="search" class="search-input" placeholder="キーワードで検索（例: 逆元、IND-CPA、誕生日）" aria-label="検索語" autocomplete="off" spellcheck="false">
+<button type="submit" class="search-close" aria-label="閉じる">Esc</button>
+</form>
+<p class="search-status" aria-live="polite"></p>
+<ol class="search-results"></ol>
+</dialog>"""
 
 
 def footer(root: str) -> str:
@@ -162,7 +173,8 @@ def footer(root: str) -> str:
 <p>{SITE_NAME} · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
 <p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
 </div></footer>
-<script src="{root}assets/widgets.js" defer></script>"""
+<script src="{root}assets/widgets.js" defer></script>
+<script src="{root}assets/site.js" defer></script>"""
 
 
 STATUS_LABEL = {"published": "公開中", "planned": "準備中"}
@@ -217,7 +229,8 @@ def render_page(page: Page, pages: list[Page], lectures: list[Page]) -> str:
         toc = f'<aside class="toc"><details open><summary>目次</summary><ol>{links}</ol></details></aside>'
     active = {"guide": "guide", "lecture": "lectures", "note": "lectures"}[page.kind]
     return f"""{head(page.title, page.meta.get('description', ''), page.root, katex='class="math"' in page.html)}
-<body class="page-{page.kind}">
+<body class="page-{page.kind}" data-page="{page.out.as_posix()}">
+<div class="readbar" aria-hidden="true"></div>
 {topbar(page.root, active)}
 <main class="doc">
 <div class="doc-grid">
@@ -259,10 +272,12 @@ def render_index(pages: list[Page], lectures: list[Page]) -> str:
 <span class="lec-meta">{esc(p.meta.get('weeks', ''))}<span class="chip chip-{p.status}">{STATUS_LABEL[p.status]}</span></span>
 <span class="lec-title">{esc(p.title.split(' ', 1)[-1])}</span>
 <span class="lec-desc">{esc(p.meta.get('description', ''))}</span>
+<span class="readmeter" data-progress-for="{p.out.as_posix()}"></span>
 </span></a></li>""")
     note_items = "".join(
         f'<li><a href="{p.out.as_posix()}"><span class="note-title">{esc(p.title)}</span>'
-        f'<span class="note-desc">{esc(p.meta.get("description", ""))}</span></a></li>'
+        f'<span class="note-desc">{esc(p.meta.get("description", ""))}</span>'
+        f'<span class="readmeter" data-progress-for="{p.out.as_posix()}"></span></a></li>'
         for p in notes
     )
     return f"""{head(SITE_NAME, '暗号基礎論を、数を動かしながら学ぶ学習ノート。16週・8ステップの講義資料とラボ。', '')}
@@ -346,6 +361,51 @@ def build_lab() -> None:
     dest.write_text(out, encoding="utf-8")
 
 
+# ---------------------------------------------------------------- search index
+def plain_text(fragment: str) -> str:
+    fragment = re.sub(r'<div class="math">.*?</div>\s*(?=<|$)', " ", fragment, flags=re.S)  # KaTeX の HTML は除く
+    fragment = re.sub(r"<figure.*?</figure>", " ", fragment, flags=re.S)
+    fragment = re.sub(r"<[^>]+>", " ", fragment)
+    return re.sub(r"\s+", " ", html.unescape(fragment)).strip()
+
+
+def search_entries(page: Page) -> list[dict]:
+    """ページを h2 / h3 ごとの節に分けて、検索用の文書にする。"""
+    entries = []
+    head = {"page": page.title, "url": page.out.as_posix(), "kind": page.kind}
+    parts = re.split(r'(<h[23] id="[^"]+">.*?</h[23]>)', page.html, flags=re.S)
+    intro = plain_text(parts[0])
+    entries.append({**head, "section": "", "anchor": "", "text": (page.meta.get("description", "") + " " + intro).strip()})
+    h2 = ""
+    for i in range(1, len(parts), 2):
+        m = re.match(r'<h([23]) id="([^"]+)">(.*?)</h[23]>', parts[i], re.S)
+        level, anchor, title = m.group(1), m.group(2), plain_text(m.group(3))
+        if level == "2":
+            h2 = title
+            section = title
+        else:
+            section = f"{h2} › {title}" if h2 else title
+        entries.append({**head, "section": section, "anchor": anchor, "text": plain_text(parts[i + 1])})
+    return entries
+
+
+def lab_entries() -> list[dict]:
+    text = (CONTENT / "labs" / "01-lab.html").read_text(encoding="utf-8")
+    entries = []
+    for m in re.finditer(r'<section class="view" id="v-(\w+)".*?<h2>(.*?)</h2>\s*<p class="lead">(.*?)</p>', text, re.S):
+        entries.append({"page": "暗号数学ラボ 第1回", "url": "labs/01-lab.html", "kind": "lab",
+                        "section": plain_text(m.group(2)), "anchor": m.group(1), "text": plain_text(m.group(3))})
+    return entries
+
+
+def write_search_index(pages: list[Page]) -> int:
+    entries = [e for p in pages for e in search_entries(p)] + lab_entries()
+    entries = [e for e in entries if e["text"] or e["section"]]
+    (ROOT / "assets" / "search-index.json").write_text(
+        json.dumps(entries, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    return len(entries)
+
+
 # ---------------------------------------------------------------- main
 def main() -> None:
     pages = load_pages()
@@ -368,7 +428,8 @@ def main() -> None:
         dest.write_text(render_page(page, pages, lectures), encoding="utf-8")
     (ROOT / "index.html").write_text(render_index(pages, lectures), encoding="utf-8")
     build_lab()
-    print(f"built {len(pages) + 2} pages ({len(math)} formulas)")
+    n = write_search_index(pages)
+    print(f"built {len(pages) + 2} pages ({len(math)} formulas, {n} search entries)")
 
 
 if __name__ == "__main__":

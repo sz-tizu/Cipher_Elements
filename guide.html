@@ -12,11 +12,23 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <link rel="stylesheet" href="assets/site.css">
 </head>
-<body class="page-guide">
+<body class="page-guide" data-page="guide.html">
+<div class="readbar" aria-hidden="true"></div>
 <header class="topbar"><div class="topbar-inner">
 <a class="wordmark" href="index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<div class="topbar-right">
 <nav aria-label="サイト"><a href="index.html">ホーム</a><a href="guide.html" aria-current="page">学習ガイド</a><a href="index.html#lectures">講義</a><a href="labs/01-lab.html">ラボ</a></nav>
+<button type="button" class="search-open" data-search-open aria-label="サイト内を検索"><span aria-hidden="true">⌕</span>検索<kbd>/</kbd></button>
+</div>
 </div></header>
+<dialog class="search" data-root="" aria-label="サイト内検索">
+<form method="dialog" class="search-box" role="search">
+<input type="search" class="search-input" placeholder="キーワードで検索（例: 逆元、IND-CPA、誕生日）" aria-label="検索語" autocomplete="off" spellcheck="false">
+<button type="submit" class="search-close" aria-label="閉じる">Esc</button>
+</form>
+<p class="search-status" aria-live="polite"></p>
+<ol class="search-results"></ol>
+</dialog>
 <main class="doc">
 <div class="doc-grid">
 <header class="doc-head">
@@ -638,5 +650,6 @@
 <p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
 </div></footer>
 <script src="assets/widgets.js" defer></script>
+<script src="assets/site.js" defer></script>
 </body>
 </html>

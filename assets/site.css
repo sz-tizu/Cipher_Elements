@@ -216,3 +216,61 @@ figure.widget:empty { min-height: 120px; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 @media print { .topbar, .toc, .pager, .sitefoot { display: none; } }
+
+/* ---------- 読書の進捗バー（assets/site.js） ---------- */
+.readbar { position: fixed; z-index: 15; left: calc(env(safe-area-inset-left, 0px) + 6px); top: 72px; bottom: 24px; width: 14px; }
+.readbar[aria-hidden="true"] { display: none; }
+.readbar-track { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 2px; background: var(--grid); overflow: hidden; }
+.readbar-max { position: absolute; left: 0; top: 0; width: 100%; height: 0; background: var(--accent); opacity: 0.3; }
+.readbar-fill { position: absolute; left: 0; top: 0; width: 100%; height: 0; background: var(--accent); }
+.readbar-tick { position: absolute; left: -3px; width: 10px; height: 12px; transform: translateY(-50%); display: block; text-decoration: none; }
+.readbar-tick::before { content: ""; position: absolute; left: 0; top: 5px; width: 10px; height: 2px; border-radius: 1px; background: var(--muted); }
+.readbar-tick.done::before { background: var(--accent); }
+.readbar-tick.here::before { background: var(--hot); height: 3px; top: 4.5px; }
+.readbar-tick span { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 12px; line-height: 1.5;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); opacity: 0; pointer-events: none; transition: opacity 0.12s; }
+.readbar-tick:hover span, .readbar-tick:focus-visible span { opacity: 1; }
+.readbar-badge { position: absolute; left: 9px; transform: translateY(-50%); font-family: var(--mono); font-size: 10.5px; line-height: 1.5;
+  color: var(--accent); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; pointer-events: none; white-space: nowrap; }
+@media (max-width: 1199px) { .readbar-badge { display: none; } }
+@media (max-width: 700px) {
+  .readbar { left: calc(env(safe-area-inset-left, 0px) + 3px); width: 8px; }
+  .readbar-track { width: 3px; }
+  .readbar-tick { left: -2px; width: 7px; }
+  .readbar-tick::before { width: 7px; }
+  .readbar-tick span { display: none; }
+}
+
+/* トップのカードに出す読了度 */
+.readmeter { display: none; }
+.readmeter.on { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+.readmeter-bar { flex: 1; max-width: 9rem; height: 4px; border-radius: 2px; background: var(--grid); overflow: hidden; }
+.readmeter-bar span { display: block; height: 100%; background: var(--accent); }
+
+/* ---------- 検索 ---------- */
+.topbar-right { display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap; }
+.search-open { font: inherit; font-size: 13.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 8px 4px 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.search-open:hover { border-color: var(--accent); color: var(--ink); }
+.search-open span { font-size: 16px; line-height: 1; }
+.search-open kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; background: var(--bg); }
+dialog.search { width: min(40rem, calc(100vw - 32px)); max-height: min(80vh, 44rem); margin: 8vh auto auto; padding: 0; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--panel); color: var(--ink); box-shadow: 0 20px 60px rgb(0 0 0 / 0.25); overflow: hidden; }
+dialog.search[open] { display: flex; flex-direction: column; }
+dialog.search::backdrop { background: rgb(15 18 30 / 0.45); }
+.search-box { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
+.search-input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--ink); }
+.search-input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+.search-close { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 0 10px; cursor: pointer; }
+.search-status { margin: 0; padding: 8px 16px 4px; font-size: 12.5px; color: var(--muted); }
+.search-results { list-style: none; margin: 0; padding: 4px 8px 12px; overflow-y: auto; }
+.search-results a { display: grid; gap: 2px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--ink); }
+.search-results a:hover, .search-results a.active { background: var(--accent-soft); }
+.sr-meta { font-size: 11.5px; color: var(--muted); }
+.sr-title { font-weight: 700; font-size: 14.5px; }
+.sr-text { font-size: 13px; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+.search-results mark { background: var(--hot-soft); color: var(--ink); border-radius: 2px; padding: 0 1px; }
+@media (max-width: 560px) { .search-open kbd { display: none; } }

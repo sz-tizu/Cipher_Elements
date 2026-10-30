@@ -20,6 +20,11 @@ GitHub Pages: https://sz-tizu.github.io/Cipher_Elements/
 補足ノート: 拡張ユークリッドの互除法、gcd(a, b) = gcd(b, r) の証明。
 ラボ: 第1回の §1〜§7 に対応した実験ページ（`labs/01-lab.html`）。
 
+## 機能
+
+- **読書の進捗バー**: 本文ページの左端に縦のバーを出します。濃い部分が今の位置、薄い部分がこれまでに読んだ最大位置で、目盛りは各節の位置（クリックで移動）です。読んだ分量はブラウザの localStorage に保存され、トップページの各カードにも表示されます。
+- **サイト内検索**: 上部の「検索」ボタンか `/` キーで開きます。講義・補足ノート・学習ガイド・ラボを節ごとに検索し、結果から該当の節へ直接移動できます。インデックスはビルド時に `assets/search-index.json` として生成されます。
+
 ## ディレクトリ
 
 ```
@@ -28,7 +33,7 @@ content/          原稿（ここを編集する）
   lectures/       各回の講義資料。front matter の status: published | planned
   notes/          補足ノート
   labs/           ラボの HTML（そのままコピーされる）
-assets/           共通 CSS、動く図（widgets.js）、favicon
+assets/           共通 CSS、動く図（widgets.js）、進捗バーと検索（site.js）、検索インデックス
 tools/build.py    content/ → HTML のビルド
 *.html            生成物（GitHub Pages が配信する）
 ```
