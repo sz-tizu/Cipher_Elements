@@ -2,7 +2,7 @@
 
 暗号基礎論の学習ノートです。一暗号技術者として働ける水準をめざして、暗号の土台を数学から順に積み上げます。各回は講義資料・補足ノート・ブラウザで動くラボで構成しています。
 
-GitHub Pages: https://sz-tizu.github.io/cipher_elements/
+GitHub Pages: https://sz-tizu.github.io/Cipher_Elements/
 
 ## 構成
 
