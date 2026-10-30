@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第4回 ハッシュ・MAC・AEAD | Cipher Elements</title>
+<meta name="description" content="機密性だけでは不十分で、改ざん検知まで含めた AEAD（認証付き暗号）を標準にするのが現代の実務です。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-lecture">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">Step 4 · 7週<span class="chip chip-planned">準備中</span></div>
+<h1>第4回 ハッシュ・MAC・AEAD</h1>
+<p class="doc-lead">機密性だけでは不十分で、改ざん検知まで含めた AEAD（認証付き暗号）を標準にするのが現代の実務です。</p>
+</header>
+
+<article class="prose">
+<div class="notice">この回の講義資料は準備中です。下は学習ガイドから抜き出したシラバスで、講義資料が公開されるとこのページが置き換わります。</div>
+
+<p>この Step は共通鍵の仕上げで、同時にパディングオラクルなど実攻撃の理解に直結します。</p>
+<h3 id="学ぶこと">学ぶこと</h3>
+<ul>
+<li>ハッシュ関数の3要件: 原像困難性、第二原像困難性、衝突困難性。誕生日攻撃により n ビット出力の衝突耐性は約 n/2 ビット</li>
+<li>Merkle-Damgård 構造（MD5、SHA-1、SHA-2）: 長さ拡張攻撃が可能で、H(k || m) は MAC として使えない。SHA-1 では衝突が実際に作られている</li>
+<li>スポンジ構造（SHA-3 / Keccak）: capacity により長さ拡張が構造上起きない</li>
+<li>MAC と EUF-CMA: HMAC の構成と安全性、CBC-MAC が可変長メッセージで破れる理由と CMAC による修正</li>
+<li>Carter-Wegman 型 MAC: GHASH、Poly1305 はユニバーサル性を持つハッシュで長いメッセージを圧縮し、短い値だけを暗号化して高速化する発想</li>
+<li>暗号化と認証の合成順序: Encrypt-then-MAC が安全で、MAC-then-Encrypt は padding oracle や Lucky13 の温床になる</li>
+<li>AEAD: AES-GCM、ChaCha20-Poly1305、AES-GCM-SIV（ノンス誤用耐性）。関連データ（AD）の役割</li>
+<li>KDF とパスワード: HKDF（extract-then-expand）、PBKDF2、bcrypt、scrypt、Argon2 とメモリハード関数の発想</li>
+<li>乱数: CSPRNG、OS の乱数源（getrandom）、乱数不良が鍵全体を壊す実例</li>
+</ul>
+<h3 id="読む">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: ハッシュ関数と MAC の各章</li>
+<li>Boneh &amp; Shoup: メッセージ完全性、認証付き暗号の章</li>
+<li>論文: Bellare &amp; Namprempre (2000) と Krawczyk (2001) は合成順序の議論の原典。どちらも短く読める</li>
+<li>一次資料: RFC 2104（HMAC）、RFC 5869（HKDF）、NIST SP 800-38D（GCM）、FIPS 202（SHA-3）、RFC 8439</li>
+</ul>
+<h3 id="手を動かす">手を動かす</h3>
+<ol>
+<li>SHA-256 に対する長さ拡張攻撃で、H(k || m) 型の MAC を偽造する（Cryptopals Set 4 に類題あり）</li>
+<li>HMAC を標準ライブラリを使わず自作し、RFC のテストベクタと照合する。定数時間比較も実装する</li>
+<li>AES-GCM でノンスを再利用した2つの暗号文から、認証鍵 H が復元できることを確認する（選択課題。多項式の根を求める発想）</li>
+<li>Argon2 のメモリ・反復パラメータを変え、自分の環境で1回あたりの所要時間を測る</li>
+</ol>
+<h3 id="到達チェック">到達チェック</h3>
+<ul>
+<li>長さ拡張攻撃の仕組みと、HMAC がそれを防ぐ理由を説明できる</li>
+<li>Encrypt-then-MAC が安全で MAC-then-Encrypt が危うい理由を、攻撃者が観測できる情報の違いで説明できる</li>
+<li>GCM のノンス再利用が「機密性」だけでなく「認証」まで壊す理由を言える</li>
+<li>ユースケースごと（通信、ディスク、パスワード保存、鍵導出）に使うべき関数を選べる</li>
+</ul>
+
+<nav class="pager" aria-label="前後の回"><a class="pager-prev" href="03-symmetric.html"><small>前の回</small>第3回 共通鍵暗号</a><a class="pager-next" href="05-public-key.html"><small>次の回</small>第5回 公開鍵暗号</a></nav>
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>

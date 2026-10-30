@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学習ガイド | Cipher Elements</title>
+<meta name="description" content="一暗号技術者として働ける水準を目標にした、16週・8ステップの学習計画。">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="page-guide">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="index.html">ホーム</a><a href="guide.html" aria-current="page">学習ガイド</a><a href="index.html#lectures">講義</a><a href="labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">ロードマップ</div>
+<h1>学習ガイド</h1>
+<p class="doc-lead">一暗号技術者として働ける水準を目標にした、16週・8ステップの学習計画。</p>
+</header>
+<aside class="toc"><details open><summary>目次</summary><ol><li><a href="#はじめに">はじめに</a></li><li><a href="#step-1-数学的基盤12週">Step 1 数学的基盤（1〜2週）</a></li><li><a href="#step-2-暗号の形式的基礎34週">Step 2 暗号の形式的基礎（3〜4週）</a></li><li><a href="#step-3-共通鍵暗号56週">Step 3 共通鍵暗号（5〜6週）</a></li><li><a href="#step-4-ハッシュmacaead7週">Step 4 ハッシュ・MAC・AEAD（7週）</a></li><li><a href="#step-5-公開鍵暗号89週">Step 5 公開鍵暗号（8〜9週）</a></li><li><a href="#step-6-署名pkiランダムオラクル10週">Step 6 署名・PKI・ランダムオラクル（10週）</a></li><li><a href="#step-7-プロトコルと実装1113週">Step 7 プロトコルと実装（11〜13週）</a></li><li><a href="#step-8-発展と前回学習との接続1416週">Step 8 発展と前回学習との接続（14〜16週）</a></li><li><a href="#教科書講義資料マップ">教科書・講義・資料マップ</a></li><li><a href="#スケジュール演習環境修了チェック">スケジュール・演習環境・修了チェック</a></li></ol></details></aside>
+<article class="prose">
+<h2 id="はじめに">はじめに</h2>
+<p>このガイドのゴールは、暗号を「選んで正しく使い、安全性の主張を読んで評価できる」水準まで持っていくことです。独自の暗号方式を設計する水準ではありません。実務の暗号技術者に求められるのは、標準方式の選定、パラメータ設定、実装レビュー、論文や仕様書の読解の4つで、本ガイドはこの4つを支える土台を順に作ります。</p>
+<h3 id="働けるの基準">「働ける」の基準</h3>
+<ul>
+<li>安全性定義（IND-CPA、IND-CCA、EUF-CMA など）を自分の言葉で説明でき、方式がどれを満たすか言える</li>
+<li>AES-GCM、ChaCha20-Poly1305、RSA-OAEP、ECDSA、Ed25519、HKDF、TLS 1.3 の仕様書を読んで、選択理由と落とし穴を指摘できる</li>
+<li>ノンス再利用、パディングオラクル、タイミング攻撃など典型的な実装ミスをコードレビューで見つけられる</li>
+<li>ゲームベースの証明（帰着）を追え、小さなものなら自分で書ける</li>
+</ul>
+<h3 id="前提と前回学習との関係">前提と前回学習との関係</h3>
+<p>前回の楕円曲線と耐量子暗号は、本ガイドの Step 5〜6 と Step 8 の応用に当たります。群や有限体の知識はすでにあるはずなので、Step 1 は診断問題で飛ばしてかまいません。逆に、前回「なぜこの構成で安全と言えるのか」が曖昧だった箇所は、Step 2 の安全性定義と帰着で埋まります。</p>
+<h3 id="学びの原則">学びの原則</h3>
+<p>どの方式も次の5点セットで学びます。</p>
+<ol>
+<li>定義: 何を安全と呼ぶか（攻撃者モデルと勝利条件）</li>
+<li>構成: 方式そのもの</li>
+<li>証明: 基盤となる仮定への帰着</li>
+<li>攻撃: 定義を外れたとき何が壊れるか</li>
+<li>実装: 実ライブラリでの使い方と典型ミス</li>
+</ol>
+<p>定義を飛ばして構成だけ覚えると、「なぜ ECB は駄目か」「なぜ MAC-then-Encrypt は危ういか」が説明できず、実務で判断が効きません。</p>
+<h3 id="全体ロードマップ約16週">全体ロードマップ（約16週）</h3>
+<ol>
+<li>Step 1 数学的基盤（1〜2週）</li>
+<li>Step 2 暗号の形式的基礎（3〜4週）</li>
+<li>Step 3 共通鍵暗号（5〜6週）</li>
+<li>Step 4 ハッシュ・MAC・AEAD（7週）</li>
+<li>Step 5 公開鍵暗号（8〜9週）</li>
+<li>Step 6 署名・PKI・ランダムオラクル（10週）</li>
+<li>Step 7 プロトコルと実装（11〜13週）</li>
+<li>Step 8 発展と前回学習との接続（14〜16週）</li>
+</ol>
+<p>各 Step には「読む」「手を動かす」「到達チェック」を付けています。到達チェックに答えられないまま次へ進まないのが、このガイドで一番大事なルールです。</p>
+<h2 id="step-1-数学的基盤12週">Step 1 数学的基盤（1〜2週）</h2>
+<p>暗号の数学は、整数論・代数・確率・計算量の4本に絞れば十分で、これ以上広げる必要はありません。ここは診断問題を先に解き、詰まった項目だけ復習する進め方を勧めます。</p>
+<h3 id="学ぶこと">学ぶこと</h3>
+<ul>
+<li>整数論: 合同式、拡張ユークリッドの互除法、フェルマーの小定理、オイラーの定理、中国剰余定理、Miller-Rabin 素数判定</li>
+<li>代数: 群（位数、巡回群、部分群、ラグランジュの定理）、環、体、有限体 GF(p) と GF(2^n)、乗法群 Z_n^* の構造</li>
+<li>確率: 条件付き確率、独立性、union bound、誕生日のパラドックス（衝突は約 2^(n/2) 個で起きる）</li>
+<li>計算量: 多項式時間、確率的多項式時間（PPT）、無視できる関数 negl(n)</li>
+<li>情報理論の最小限: エントロピーと min-entropy（鍵や乱数の「質」を測る道具）</li>
+</ul>
+<p>計算量では、「NP 困難だから安全」とは言えない点が重要です。暗号が必要とするのは最悪時ではなく平均的に難しい問題で、この違いが Step 2 の定義の形を決めます。</p>
+<h3 id="読む">読む</h3>
+<ul>
+<li>Shoup, A Computational Introduction to Number Theory and Algebra（無料公開）: 合同式、群、有限体の部分</li>
+<li>Katz &amp; Lindell: 数論と計算量的仮定を扱う章、確率の付録</li>
+<li>日本語なら黒澤・尾形『現代暗号の基礎数理』（コロナ社）</li>
+</ul>
+<h3 id="手を動かすpython">手を動かす（Python）</h3>
+<ol>
+<li>拡張ユークリッドで逆元を求める関数と、square-and-multiply のモジュラ冪を自作する</li>
+<li>Miller-Rabin を実装し、Carmichael 数が Fermat テストを騙す様子を確認する</li>
+<li>SHA-256 の出力を先頭32bitに切り詰め、衝突が約 2^16 回で見つかることを実験する</li>
+<li>GF(2^8) の乗算を既約多項式 x^8+x^4+x^3+x+1 で実装する（AES の下準備）</li>
+</ol>
+<h3 id="到達チェック">到達チェック</h3>
+<ul>
+<li>Z_n^* の位数をオイラーのφ関数で書き、RSA の逆元が存在する理由を説明できる</li>
+<li>「ハッシュ長 n ビットの衝突耐性は n/2 ビット相当」を誕生日の議論で説明できる</li>
+<li>negl(n) の定義を述べ、「2^(-n) は無視できるが 1/n^10 は無視できない」と言える</li>
+<li>位数 q の群で、離散対数問題の自明な攻撃が約 √q で済む理由（baby-step giant-step）を説明できる</li>
+</ul>
+<h2 id="step-2-暗号の形式的基礎34週">Step 2 暗号の形式的基礎（3〜4週）</h2>
+<p>この Step が全体の背骨です。「安全」を攻撃者とのゲームとして定義し、方式の安全性を仮定への帰着で示す、という現代暗号の流儀をここで身につけます。ここを重く学ぶほど、以降の Step が速く進みます。</p>
+<h3 id="学ぶこと_1">学ぶこと</h3>
+<ul>
+<li>Kerckhoffs の原則: 安全性は鍵のみに依存させ、方式は公開前提で設計する</li>
+<li>Shannon の完全秘匿性: ワンタイムパッド（OTP）は完全秘匿だが、鍵長はメッセージ長以上が必須（この制約が定理になっている）</li>
+<li>計算量的安全性: 無限の計算力を仮定せず、PPT の攻撃者と無視できる成功確率で定義する。具体的安全性（t, ε）と漸近的安全性の違い</li>
+<li>攻撃者モデル: 既知平文、選択平文（CPA）、選択暗号文（CCA）</li>
+<li>IND-CPA ゲーム: チャレンジャーが秘密ビット b を選び、攻撃者が b を当てる。優位性は次の式で測る</li>
+</ul>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">A</span><span class="mord mathnormal">d</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.07847em;">I</span><span class="mord mathnormal mtight" style="margin-right:0.10903em;">N</span><span class="mord mathnormal mtight" style="margin-right:0.02778em;">D</span><span class="mbin mtight">−</span><span class="mord mathnormal mtight" style="margin-right:0.13889em;">CP</span><span class="mord mathnormal mtight">A</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">A</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0519em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">b</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/2∣</span></span></span></span></span></div>
+
+<ul>
+<li>疑似乱数生成器（PRG）の定義、乱数と区別できないことの意味</li>
+<li>帰着とハイブリッド論法: 「方式を破る A がいれば、仮定を破る B を作れる」を書く型。Shoup の game-hopping（ゲームの列を1段ずつ変える証明）も同じ流れ</li>
+</ul>
+<h3 id="読む_1">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: 序論、完全秘匿性、計算量的安全な共通鍵暗号の各章（この Step の主教材。章番号は版で異なるので章題で探す）</li>
+<li>Rosulek, The Joy of Cryptography（無料）: OTP、安全性定義、PRG、ハイブリッド論法の章。証明の型を最も平易に学べる</li>
+<li>Bellare &amp; Rogaway の講義ノート（無料）: ゲームベース定義の原典に近い</li>
+<li>日本語: 岡本龍明『現代暗号入門』（共立出版）で用語を日本語に対応させる</li>
+</ul>
+<h3 id="手を動かす">手を動かす</h3>
+<ol>
+<li>OTP の鍵を2回使うと2つの暗号文の XOR が平文同士の XOR になることを示し、crib dragging で復号する（Cryptopals Set 1 の XOR 系課題）</li>
+<li>IND-CPA ゲームを Python で書き、ECB モードの攻撃者が優位性ほぼ 1/2 を達成するのを確認する</li>
+<li>証明練習: G が PRG のとき、G'(s) = G(s) || G(s) が PRG でないことを区別器を構成して示す</li>
+<li>証明練習: G が PRG のとき、独立な2つの鍵に適用して連結した G2(s1, s2) = G(s1) || G(s2) も PRG になることをハイブリッド論法で示す</li>
+</ol>
+<h3 id="到達チェック_1">到達チェック</h3>
+<ul>
+<li>「決定的な暗号化は IND-CPA を満たせない」理由を、攻撃者の戦略付きで説明できる</li>
+<li>完全秘匿性と計算量的安全性の違いを、鍵長の観点で説明できる</li>
+<li>帰着の構造（A を呼び出す B の作り方、B の成功確率と A の優位性の関係）を白紙から書ける</li>
+<li>「この方式は安全」という主張を見て、攻撃者モデルと仮定を聞き返せる</li>
+</ul>
+<h2 id="step-3-共通鍵暗号56週">Step 3 共通鍵暗号（5〜6週）</h2>
+<p>ブロック暗号を PRP（疑似ランダム置換）として扱い、その上に運用モードを載せて IND-CPA を示す、という流れを押さえるのがこの Step の中心です。AES の内部は「理解して一度実装する」までやり、運用では必ずライブラリを使います。</p>
+<h3 id="学ぶこと_2">学ぶこと</h3>
+<ul>
+<li>PRF と PRP: 鍵付き関数と鍵付き置換。PRF/PRP スイッチング補題により、q 回のクエリで区別できる確率は約 q^2 / 2^(n+1) になる。この式が「1つの鍵で暗号化してよい量の上限」の根拠になる</li>
+<li>ブロック暗号の構造: SPN（AES）と Feistel（DES）。Feistel は段数が足りれば PRP になる（Luby-Rackoff）</li>
+<li>AES の4操作: SubBytes、ShiftRows、MixColumns、AddRoundKey。鍵長128/192/256bit でラウンド数は10/12/14。S-box は GF(2^8) の逆元に基づく</li>
+<li>解読法の考え方: 差分解読と線形解読。AES の wide trail 戦略は、これらの攻撃が成り立ちにくいように拡散層を設計する発想</li>
+<li>運用モード: ECB（使ってはいけない）、CBC（IV は予測不能なランダム）、CTR（ノンスは一意）、XTS（ストレージ向け）。CBC と CTR は IND-CPA 安全だが、改ざんには無力（CCA 安全ではない）</li>
+<li>ストリーム暗号: ChaCha20（ARX 構造）。RC4 は出力の偏りで破られた</li>
+<li>64bit ブロックの限界: 3DES は誕生日攻撃（Sweet32）で実用上の脆弱性が出るため廃止方向</li>
+</ul>
+<h3 id="読む_2">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: 共通鍵暗号の実用的構成の章、運用モードの節</li>
+<li>Boneh &amp; Shoup, A Graduate Course in Applied Cryptography（無料）: ブロック暗号、CPA 安全な暗号化の章</li>
+<li>Daemen &amp; Rijmen, The Design of Rijndael: AES 設計者による解説。拡散層の考え方に絞って読めば十分</li>
+<li>一次資料: FIPS 197（AES）、NIST SP 800-38A（運用モード）、RFC 8439（ChaCha20）</li>
+<li>日本語: 結城浩『暗号技術入門 第3版』で全体像を再確認</li>
+</ul>
+<h3 id="手を動かす_1">手を動かす</h3>
+<ol>
+<li>AES-128 を一から実装し、FIPS 197 付録のテストベクタで検証する（Python で十分。余力があれば Rust でも）</li>
+<li>CBC、CTR を自分で実装する（ブロック暗号は上の AES を使う）</li>
+<li>Cryptopals: ECB の byte-at-a-time 復号（Set 2）と CBC のビット反転攻撃（Set 2）</li>
+<li>ChaCha20 のクォーターラウンドを実装し、RFC 8439 のテストベクタで確認する</li>
+</ol>
+<h3 id="到達チェック_2">到達チェック</h3>
+<ul>
+<li>ECB が IND-CPA を満たさない理由と、CBC で IV が予測可能だと破れる理由（BEAST の原理）を説明できる</li>
+<li>CTR でノンスを再利用すると何が漏れるかを式で書ける</li>
+<li>同一鍵で安全に暗号化できる量が、ブロック長 n に対して約 2^(n/2) ブロックで頭打ちになる理由を説明できる</li>
+<li>「暗号化したのに改ざんされる」問題を、CBC のビット反転で具体的に示せる</li>
+</ul>
+<h2 id="step-4-ハッシュmacaead7週">Step 4 ハッシュ・MAC・AEAD（7週）</h2>
+<p>機密性だけでは不十分で、改ざん検知まで含めた AEAD（認証付き暗号）を標準にするのが現代の実務です。この Step は共通鍵の仕上げで、同時にパディングオラクルなど実攻撃の理解に直結します。</p>
+<h3 id="学ぶこと_3">学ぶこと</h3>
+<ul>
+<li>ハッシュ関数の3要件: 原像困難性、第二原像困難性、衝突困難性。誕生日攻撃により n ビット出力の衝突耐性は約 n/2 ビット</li>
+<li>Merkle-Damgård 構造（MD5、SHA-1、SHA-2）: 長さ拡張攻撃が可能で、H(k || m) は MAC として使えない。SHA-1 では衝突が実際に作られている</li>
+<li>スポンジ構造（SHA-3 / Keccak）: capacity により長さ拡張が構造上起きない</li>
+<li>MAC と EUF-CMA: HMAC の構成と安全性、CBC-MAC が可変長メッセージで破れる理由と CMAC による修正</li>
+<li>Carter-Wegman 型 MAC: GHASH、Poly1305 はユニバーサル性を持つハッシュで長いメッセージを圧縮し、短い値だけを暗号化して高速化する発想</li>
+<li>暗号化と認証の合成順序: Encrypt-then-MAC が安全で、MAC-then-Encrypt は padding oracle や Lucky13 の温床になる</li>
+<li>AEAD: AES-GCM、ChaCha20-Poly1305、AES-GCM-SIV（ノンス誤用耐性）。関連データ（AD）の役割</li>
+<li>KDF とパスワード: HKDF（extract-then-expand）、PBKDF2、bcrypt、scrypt、Argon2 とメモリハード関数の発想</li>
+<li>乱数: CSPRNG、OS の乱数源（getrandom）、乱数不良が鍵全体を壊す実例</li>
+</ul>
+<h3 id="読む_3">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: ハッシュ関数と MAC の各章</li>
+<li>Boneh &amp; Shoup: メッセージ完全性、認証付き暗号の章</li>
+<li>論文: Bellare &amp; Namprempre (2000) と Krawczyk (2001) は合成順序の議論の原典。どちらも短く読める</li>
+<li>一次資料: RFC 2104（HMAC）、RFC 5869（HKDF）、NIST SP 800-38D（GCM）、FIPS 202（SHA-3）、RFC 8439</li>
+</ul>
+<h3 id="手を動かす_2">手を動かす</h3>
+<ol>
+<li>SHA-256 に対する長さ拡張攻撃で、H(k || m) 型の MAC を偽造する（Cryptopals Set 4 に類題あり）</li>
+<li>HMAC を標準ライブラリを使わず自作し、RFC のテストベクタと照合する。定数時間比較も実装する</li>
+<li>AES-GCM でノンスを再利用した2つの暗号文から、認証鍵 H が復元できることを確認する（選択課題。多項式の根を求める発想）</li>
+<li>Argon2 のメモリ・反復パラメータを変え、自分の環境で1回あたりの所要時間を測る</li>
+</ol>
+<h3 id="到達チェック_3">到達チェック</h3>
+<ul>
+<li>長さ拡張攻撃の仕組みと、HMAC がそれを防ぐ理由を説明できる</li>
+<li>Encrypt-then-MAC が安全で MAC-then-Encrypt が危うい理由を、攻撃者が観測できる情報の違いで説明できる</li>
+<li>GCM のノンス再利用が「機密性」だけでなく「認証」まで壊す理由を言える</li>
+<li>ユースケースごと（通信、ディスク、パスワード保存、鍵導出）に使うべき関数を選べる</li>
+</ul>
+<h2 id="step-5-公開鍵暗号89週">Step 5 公開鍵暗号（8〜9週）</h2>
+<p>教科書 RSA は暗号方式ではなく「素材」にすぎない、という感覚をここで掴みます。安全な公開鍵暗号は、素材にパディングや KEM の構造を足して、CCA 安全まで持っていったものです。</p>
+<h3 id="学ぶこと_4">学ぶこと</h3>
+<ul>
+<li>困難性仮定の階層: 離散対数（DLP）、計算 DH（CDH）、決定 DH（DDH）、RSA 仮定、素因数分解。仮定が強いほど証明できることが増えるが、破られるリスクも上がる</li>
+<li>Diffie-Hellman 鍵交換: 受動的盗聴者には安全だが、中間者には無力（認証が別途必要）</li>
+<li>公開鍵暗号の定義と IND-CPA / IND-CCA2: 公開鍵では攻撃者が自分で暗号化できるため、決定的な暗号化は IND-CPA を満たせない</li>
+<li>ElGamal: DDH 仮定下で IND-CPA。ただし展性があり CCA 安全ではない</li>
+<li>RSA: 教科書 RSA の問題（決定的、展性、小さい e への攻撃）、PKCS#1 v1.5 と Bleichenbacher 攻撃、RSA-OAEP（ランダムオラクルモデルで IND-CCA2）</li>
+<li>KEM/DEM とハイブリッド暗号: 公開鍵で共通鍵を運び、データは AEAD で暗号化する。現代の標準形で、HPKE（RFC 9180）もこの構造</li>
+<li>Cramer-Shoup: ランダムオラクルなしで CCA 安全を示した方式。構成の発想を知る程度でよい</li>
+<li>最良攻撃と鍵長: RSA と有限体 DH には数体ふるい法などの準指数時間攻撃があり、楕円曲線では一般的な攻撃が約 √q 止まり。このため RSA は2048bit以上、楕円曲線は256bitで同程度の強度を狙う</li>
+</ul>
+<h3 id="読む_4">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: 公開鍵暗号の章、数論的仮定の章</li>
+<li>Boneh &amp; Shoup: 公開鍵暗号の章群（ElGamal、RSA、CCA 安全性）</li>
+<li>Boneh, Twenty Years of Attacks on the RSA Cryptosystem（1999）: 実装ミス由来の攻撃の俯瞰として優れている</li>
+<li>Bleichenbacher (1998) の原論文、RFC 8017（PKCS#1 v2.2）、RFC 9180（HPKE）</li>
+</ul>
+<h3 id="手を動かす_3">手を動かす</h3>
+<ol>
+<li>教科書 RSA を実装し、同じ平文が同じ暗号文になること、2つの暗号文の積が平文の積に対応すること（展性）を確認する</li>
+<li>RSA のブロードキャスト攻撃（e=3、同一平文を3宛先に送信）を CRT で破る（Cryptopals Set 5）</li>
+<li>PKCS#1 v1.5 のパディングオラクル攻撃を実装する（Cryptopals Set 6 の Bleichenbacher 系課題。簡易版でよい）</li>
+<li>DH で小さい部分群へ誘導する攻撃（small subgroup attack）を試し、公開鍵検証の必要性を体感する</li>
+</ol>
+<h3 id="到達チェック_4">到達チェック</h3>
+<ul>
+<li>「RSA は暗号化に使える」が不正確な理由と、実務で RSA-OAEP や KEM を使う理由を説明できる</li>
+<li>CDH と DDH の違い、DDH が成り立たない群の例を挙げられる</li>
+<li>Bleichenbacher 攻撃が「復号エラーの違い」という1ビットの情報で成立する理由を説明できる</li>
+<li>公開鍵暗号でデータを直接暗号化せず、ハイブリッドにする理由を3つ挙げられる</li>
+</ul>
+<h2 id="step-6-署名pkiランダムオラクル10週">Step 6 署名・PKI・ランダムオラクル（10週）</h2>
+<p>署名は「公開鍵で検証できる MAC」ではなく、第三者への証明力（否認防止）を持つ別物として学びます。あわせて、証明で多用されるランダムオラクルモデルの強みと限界をここで整理します。</p>
+<h3 id="学ぶこと_5">学ぶこと</h3>
+<ul>
+<li>署名の定義と EUF-CMA: 選択メッセージ攻撃のもとで、新しいメッセージの署名を偽造できないこと</li>
+<li>一方向関数だけで作れる Lamport 署名（一回限り）と、hash-and-sign の考え方</li>
+<li>RSA 署名: 教科書 RSA 署名の偽造、RSA-FDH、RSA-PSS。PKCS#1 v1.5 署名は検証実装の不備で偽造される事例がある</li>
+<li>Schnorr 署名と Fiat-Shamir 変換: 対話型の識別プロトコル（Σプロトコル）を、ハッシュで非対話化して署名にする。ZK や SNARK につながる重要な発想</li>
+<li>DSA / ECDSA: ノンスの再利用や偏りで秘密鍵が復元できる。実際にゲーム機や暗号資産ウォレットで事故が起きた</li>
+<li>EdDSA（Ed25519）: ノンスを決定論的に導出して上記の問題を避ける設計</li>
+<li>ランダムオラクルモデル（ROM）: ハッシュを理想的な乱数関数とみなして証明する手法。実用方式の多くがこれに依存するが、「ROM では安全でも、どんなハッシュで実体化しても危ない」人工的な方式が存在する（Canetti-Goldreich-Halevi）という限界がある</li>
+<li>PKI: X.509 証明書、認証局（CA）と信頼の連鎖、失効（CRL、OCSP）、Certificate Transparency</li>
+</ul>
+<h3 id="読む_5">読む</h3>
+<ul>
+<li>Katz &amp; Lindell と Boneh &amp; Shoup: デジタル署名の章</li>
+<li>Bellare &amp; Rogaway, Random Oracles are Practical（1993）: ROM の原典</li>
+<li>一次資料: RFC 8032（EdDSA）、FIPS 186-5（署名標準）、RFC 5280（X.509）</li>
+<li>日本の公的資料: CRYPTREC 暗号リスト（推奨される方式の一覧と運用指針）</li>
+</ul>
+<h3 id="手を動かす_4">手を動かす</h3>
+<ol>
+<li>Lamport 署名を実装し、なぜ一回しか使えないかを実際に偽造して確かめる</li>
+<li>DSA / ECDSA でノンスを再利用した2つの署名から秘密鍵を復元する（Cryptopals Set 6 の DSA 課題）</li>
+<li>Ed25519 を標準ライブラリで使い、RFC 8032 のテストベクタで確認する</li>
+<li>openssl で実在サイトの証明書チェーンを取得し、各証明書の発行者、有効期限、拡張項目を読む</li>
+</ol>
+<h3 id="到達チェック_5">到達チェック</h3>
+<ul>
+<li>署名と MAC の違いを、鍵の配り方と否認防止の観点で説明できる</li>
+<li>ECDSA でノンスが漏れると秘密鍵が復元できる理由を、署名式から導ける</li>
+<li>ROM の「利点」と「限界」を、具体的な方式を挙げて説明できる</li>
+<li>証明書検証で何を確認するか（署名、期限、失効、名前、用途）を列挙できる</li>
+</ul>
+<h2 id="step-7-プロトコルと実装1113週">Step 7 プロトコルと実装（11〜13週）</h2>
+<p>部品が安全でも、組み合わせ方と実装で壊れるのが実務の現実です。この Step では、これまでの部品が TLS や Signal の中でどう組まれているかを読み、実装レベルの攻撃への感覚を作ります。実務で最も価値が出る部分でもあります。</p>
+<h3 id="学ぶこと_6">学ぶこと</h3>
+<ul>
+<li>認証付き鍵交換（AKE）の要件: 前方秘匿性、鍵漏洩なりすまし（KCI）耐性、ダウングレード攻撃への耐性、リプレイ対策</li>
+<li>TLS 1.3（RFC 8446）: 次の流れを追えるようにする
+  1. ClientHello に鍵共有（ECDHE の公開値）を載せ、1往復目で共有秘密を確立する
+  2. HKDF による鍵スケジュールで、ハンドシェイク用とアプリケーション用の鍵を分ける
+  3. サーバ証明書と署名（CertificateVerify）でサーバを認証し、Finished で全体の改ざんを検出する
+  4. 以降は AEAD のみ。RSA 鍵交換、CBC、RC4、圧縮は廃止された。0-RTT はリプレイに注意が必要</li>
+<li>メッセンジャー系: Signal の X3DH と Double Ratchet（過去と未来の両方向で漏洩被害を限定する）、Noise Protocol Framework、WireGuard</li>
+<li>パスワード認証: PAKE（SRP、OPAQUE）の目的は、パスワードそのものをサーバに渡さずに認証すること</li>
+<li>サイドチャネル: タイミング、キャッシュ、電力。定数時間実装と、秘密依存の分岐やテーブル参照を避ける理由</li>
+<li>典型的な実装ミス: ノンス再利用、乱数不良（Debian OpenSSL の乱数バグ）、MAC の非定数時間比較、API の誤用（デフォルトが ECB など）、エラーメッセージで状態が漏れるオラクル</li>
+<li>鍵管理: 鍵のライフサイクル、封筒暗号（KMS で鍵を包む構成）、HSM、鍵ローテーション。NIST SP 800-57 が基本資料</li>
+<li>形式検証の入口: ProVerif や Tamarin でプロトコルを機械的に検証できることを知る（深入りは不要）</li>
+</ul>
+<h3 id="読む_6">読む</h3>
+<ul>
+<li>Aumasson, Serious Cryptography（第2版）: 実装と TLS の章。実務寄りの全体像に向く</li>
+<li>Ferguson, Schneier &amp; Kohno, Cryptography Engineering: 設計判断の考え方</li>
+<li>RFC 8446（TLS 1.3）、Signal の X3DH と Double Ratchet の仕様書、Noise の仕様書</li>
+<li>Bernstein, Cache-timing attacks on AES（2005）、Al Fardan &amp; Paterson の Lucky Thirteen 論文</li>
+</ul>
+<h3 id="手を動かす_5">手を動かす</h3>
+<ol>
+<li>Wireshark と SSLKEYLOGFILE で TLS 1.3 のハンドシェイクを観察し、上の1〜4と対応づける</li>
+<li>ECDHE、HKDF、AEAD で小さな安全チャネルを Python で組む（学習用。本番では使わない）</li>
+<li>非定数時間の MAC 比較に対するタイミング攻撃を、ローカルサーバ相手に再現する（Cryptopals Set 4）</li>
+<li>AWS KMS を使った封筒暗号の実装を試し、鍵階層とローテーションの流れを確認する</li>
+</ol>
+<h3 id="到達チェック_6">到達チェック</h3>
+<ul>
+<li>TLS 1.3 が TLS 1.2 から何を削り、なぜそれで安全になるかを説明できる</li>
+<li>前方秘匿性が、長期鍵ではなく一時鍵の DH で実現される理由を説明できる</li>
+<li>暗号コードのレビューで確認する項目（乱数源、ノンス管理、比較の定数時間性、エラー処理、鍵の寿命）を列挙できる</li>
+<li>「自作せず、実績あるライブラリの高水準 API を使う」を、具体的なライブラリ名つきで言える（libsodium、Tink、RustCrypto など）</li>
+</ul>
+<h2 id="step-8-発展と前回学習との接続1416週">Step 8 発展と前回学習との接続（14〜16週）</h2>
+<p>基礎を一巡したあとで、前回学んだ楕円曲線と耐量子暗号が、ここまでの枠組みのどこに収まるかを確認します。あわせて、ゼロ知識や MPC といった応用暗号の入口に立ち、最後に総まとめの課題を置きます。</p>
+<h3 id="前回学習の位置づけ">前回学習の位置づけ</h3>
+<ul>
+<li>楕円曲線: Step 5 の DH と Step 6 の Schnorr 署名を、群を楕円曲線に替えて実現したものが ECDH と EdDSA。安全性の議論（DLP、DDH、ノンス管理）はそのまま持ち越せる。ペアリングを使うと BLS 署名や IBE が構成できる</li>
+<li>耐量子暗号: Shor のアルゴリズムは RSA、有限体 DH、楕円曲線の DLP をすべて破る。一方 Grover は共通鍵の強度を概ね半減させる程度なので、AES-256 や SHA-3 を使えば対処できる</li>
+<li>NIST 標準: 鍵カプセル化は ML-KEM（FIPS 203）、署名は ML-DSA（FIPS 204）と SLH-DSA（FIPS 205）。FN-DSA（Falcon ベース）などは策定が続いているため、最新状況は NIST のサイトで確認する</li>
+<li>移行の実務: 従来方式と ML-KEM を併用するハイブリッド鍵交換が TLS などで先行している。組織内の暗号利用箇所の棚卸しと、方式を差し替えやすい設計（暗号アジリティ）が先に必要になる</li>
+</ul>
+<h3 id="学ぶこと応用暗号の入口">学ぶこと（応用暗号の入口）</h3>
+<ul>
+<li>ゼロ知識証明: Σプロトコルのシミュレータによる ZK の定義、Fiat-Shamir による非対話化、zk-SNARK の概要</li>
+<li>秘密分散と MPC: Shamir 秘密分散、オブリビアス転送、Yao の garbled circuits の考え方</li>
+<li>準同型暗号: 加法準同型（Paillier）から完全準同型暗号（FHE）まで</li>
+<li>格子暗号の基礎: LWE 問題と、その上の Regev 型暗号化。Step 2 の帰着の考え方がそのまま使える</li>
+<li>理論の入口: 一方向関数と PRG、PRF の存在の関係（Goldreich の理論体系）</li>
+</ul>
+<h3 id="読む_7">読む</h3>
+<ul>
+<li>Hoffstein, Pipher &amp; Silverman, An Introduction to Mathematical Cryptography: 楕円曲線、格子、ペアリングの復習用</li>
+<li>Peikert, A Decade of Lattice Cryptography（2016）: 格子暗号の標準的な概説</li>
+<li>Thaler, Proofs, Arguments, and Zero-Knowledge（無料）、Evans, Kolesnikov &amp; Rosulek, A Pragmatic Introduction to Secure Multi-Party Computation（無料）</li>
+<li>理論を深めたい場合: Goldreich, Foundations of Cryptography Vol. 1 と Vol. 2</li>
+<li>日本語: 縫田光司『耐量子計算機暗号』（前回の教材の補強）</li>
+</ul>
+<h3 id="手を動かす_6">手を動かす</h3>
+<ol>
+<li>Shamir 秘密分散を実装し、しきい値未満では情報が得られないことを確認する</li>
+<li>Schnorr 識別プロトコルのシミュレータを書き、ZK の意味を体感する</li>
+<li>小さなパラメータの LWE 暗号化を実装し、ノイズが復号に与える影響を観察する</li>
+<li>総まとめ課題: 「AEAD、ECDHE、Ed25519、HKDF で構成した簡易セキュアチャネル」を設計し、脅威モデル、使用方式の選定理由、想定される攻撃への対策を A4 数枚の設計書にまとめる。Step 7 のレビュー観点で自己レビューもする</li>
+</ol>
+<h3 id="到達チェック_7">到達チェック</h3>
+<ul>
+<li>楕円曲線版の DH と署名の安全性が、Step 5〜6 の議論のどこから来るかを説明できる</li>
+<li>Shor と Grover が、それぞれどの方式にどう効くかを区別して言える</li>
+<li>ゼロ知識の3性質（完全性、健全性、ゼロ知識性）を、Schnorr プロトコルで説明できる</li>
+<li>総まとめ課題の設計書を、他の人が読んでレビューできる水準で書ける</li>
+</ul>
+<h2 id="教科書講義資料マップ">教科書・講義・資料マップ</h2>
+<p>主教材は Katz &amp; Lindell と Boneh &amp; Shoup の2冊に絞り、残りは補助として必要な箇所だけ使います。1冊を最後まで通すより、定義の読み方が揃った2冊を行き来するほうが、安全性の議論が身につきます。</p>
+<table>
+<thead>
+<tr>
+<th>資料</th>
+<th>種別</th>
+<th>言語・費用</th>
+<th>使う Step</th>
+<th>位置づけ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Katz &amp; Lindell, Introduction to Modern Cryptography（第3版）</td>
+<td>教科書</td>
+<td>英語・有料</td>
+<td>2〜6</td>
+<td>主教材。定義、構成、証明の流れが一貫している</td>
+</tr>
+<tr>
+<td>Boneh &amp; Shoup, A Graduate Course in Applied Cryptography</td>
+<td>教科書</td>
+<td>英語・無料公開</td>
+<td>2〜6</td>
+<td>主教材の補強。AEAD、署名、CCA 安全性が実践的で詳しい</td>
+</tr>
+<tr>
+<td>Rosulek, The Joy of Cryptography</td>
+<td>教科書</td>
+<td>英語・無料</td>
+<td>2〜3</td>
+<td>証明の型を最も平易に学べる。Step 2 の併読向き</td>
+</tr>
+<tr>
+<td>Shoup, A Computational Introduction to Number Theory and Algebra</td>
+<td>教科書</td>
+<td>英語・無料</td>
+<td>1</td>
+<td>数論と代数の標準的な参考書</td>
+</tr>
+<tr>
+<td>Bellare &amp; Rogaway, Introduction to Modern Cryptography</td>
+<td>講義ノート</td>
+<td>英語・無料</td>
+<td>2〜4</td>
+<td>ゲームベース定義の補強</td>
+</tr>
+<tr>
+<td>Menezes, van Oorschot &amp; Vanstone, Handbook of Applied Cryptography</td>
+<td>辞書</td>
+<td>英語・無料</td>
+<td>全般</td>
+<td>引く用途。1990年代の本なので現行方式は一次資料で確認する</td>
+</tr>
+<tr>
+<td>Aumasson, Serious Cryptography（第2版）</td>
+<td>実務書</td>
+<td>英語・有料</td>
+<td>3〜7</td>
+<td>数式を抑えて全体像と実装上の注意を掴む</td>
+</tr>
+<tr>
+<td>Ferguson, Schneier &amp; Kohno, Cryptography Engineering</td>
+<td>実務書</td>
+<td>英語・有料</td>
+<td>7</td>
+<td>設計判断と失敗事例</td>
+</tr>
+<tr>
+<td>Hoffstein, Pipher &amp; Silverman, An Introduction to Mathematical Cryptography</td>
+<td>教科書</td>
+<td>英語・有料</td>
+<td>5, 8</td>
+<td>楕円曲線と格子の数学</td>
+</tr>
+<tr>
+<td>Goldreich, Foundations of Cryptography</td>
+<td>理論書</td>
+<td>英語・有料</td>
+<td>8</td>
+<td>理論を深掘りしたい場合のみ</td>
+</tr>
+<tr>
+<td>結城浩『暗号技術入門 第3版』</td>
+<td>入門書</td>
+<td>日本語・有料</td>
+<td>全般</td>
+<td>全体像と用語の確認</td>
+</tr>
+<tr>
+<td>岡本龍明『現代暗号入門』</td>
+<td>教科書</td>
+<td>日本語・有料</td>
+<td>2, 5, 6</td>
+<td>安全性定義を日本語で確認する</td>
+</tr>
+<tr>
+<td>黒澤馨・尾形わかは『現代暗号の基礎数理』</td>
+<td>教科書</td>
+<td>日本語・有料</td>
+<td>1</td>
+<td>数論、代数の日本語リファレンス</td>
+</tr>
+<tr>
+<td>光成滋生『クラウドを支えるこれからの暗号技術』</td>
+<td>技術書</td>
+<td>日本語・有料</td>
+<td>5〜8</td>
+<td>実装寄り。ペアリング、準同型暗号</td>
+</tr>
+<tr>
+<td>縫田光司『耐量子計算機暗号』</td>
+<td>教科書</td>
+<td>日本語・有料</td>
+<td>8</td>
+<td>前回教材の補強</td>
+</tr>
+<tr>
+<td>Boneh, Cryptography I / II（Coursera）</td>
+<td>講義動画</td>
+<td>英語・聴講無料</td>
+<td>2〜6</td>
+<td>教科書と並行して視聴</td>
+</tr>
+<tr>
+<td>Cryptopals</td>
+<td>演習</td>
+<td>英語・無料</td>
+<td>2〜7</td>
+<td>実装で攻撃を体験する課題集。各 Step の演習で参照</td>
+</tr>
+<tr>
+<td>CryptoHack</td>
+<td>演習</td>
+<td>英語・無料</td>
+<td>1〜8</td>
+<td>ゲーム形式。数論と公開鍵系が充実</td>
+</tr>
+<tr>
+<td>FIPS、NIST SP 800 シリーズ、RFC</td>
+<td>規格</td>
+<td>英語・無料</td>
+<td>3〜8</td>
+<td>一次資料。各 Step の「読む」に個別に記載</td>
+</tr>
+<tr>
+<td>CRYPTREC 暗号リスト</td>
+<td>規格</td>
+<td>日本語・無料</td>
+<td>全般</td>
+<td>国内で推奨される方式の確認</td>
+</tr>
+</tbody>
+</table>
+<p>書名・著者は記憶に基づいており、版や無料公開の範囲は変わることがあります。入手前に書名で検索して現状を確認してください。また Katz &amp; Lindell は版によって章の並びが違うため、本ガイドでは章番号でなく章題で指示しています。</p>
+<h2 id="スケジュール演習環境修了チェック">スケジュール・演習環境・修了チェック</h2>
+<p>週10時間（平日1時間＋週末に3〜4時間のまとまった時間）を想定した16週の計画です。10月中旬に始めれば、2月初旬に終わります。仕事が立て込む週は、遅れを取り戻すより前後の週に分散させるほうが、定着が良くなります。</p>
+<h3 id="16週スケジュール">16週スケジュール</h3>
+<table>
+<thead>
+<tr>
+<th>週</th>
+<th>Step</th>
+<th>中心になる読み物</th>
+<th>週末の成果物</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1〜2</td>
+<td>1 数学的基盤</td>
+<td>Shoup の数論、診断問題</td>
+<td>拡張ユークリッド、Miller-Rabin、GF(2^8) 乗算の実装</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2 形式的基礎</td>
+<td>Katz &amp; Lindell 序論〜完全秘匿性、Rosulek</td>
+<td>OTP の鍵再利用攻撃、IND-CPA ゲームのコード</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2 形式的基礎</td>
+<td>Katz &amp; Lindell の計算量的安全性、ハイブリッド論法</td>
+<td>帰着の証明を2題、手書きで完成</td>
+</tr>
+<tr>
+<td>5</td>
+<td>3 共通鍵暗号</td>
+<td>AES の章、FIPS 197</td>
+<td>AES-128 の実装とテストベクタ検証</td>
+</tr>
+<tr>
+<td>6</td>
+<td>3 共通鍵暗号</td>
+<td>運用モード、SP 800-38A</td>
+<td>CBC、CTR の実装、ECB 攻撃（Cryptopals）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>4 ハッシュ・MAC・AEAD</td>
+<td>ハッシュ、MAC、AE の各章、HKDF</td>
+<td>長さ拡張攻撃、HMAC 自作</td>
+</tr>
+<tr>
+<td>8</td>
+<td>5 公開鍵暗号</td>
+<td>数論的仮定、DH、ElGamal</td>
+<td>教科書 RSA と展性、ブロードキャスト攻撃</td>
+</tr>
+<tr>
+<td>9</td>
+<td>5 公開鍵暗号</td>
+<td>RSA-OAEP、CCA、KEM/DEM</td>
+<td>Bleichenbacher 型オラクルの簡易実装</td>
+</tr>
+<tr>
+<td>10</td>
+<td>6 署名・PKI</td>
+<td>署名の章、RFC 8032、RFC 5280</td>
+<td>ECDSA ノンス再利用攻撃、証明書チェーンの読解</td>
+</tr>
+<tr>
+<td>11</td>
+<td>7 プロトコル</td>
+<td>RFC 8446、Aumasson の TLS 章</td>
+<td>TLS 1.3 のパケット観察メモ</td>
+</tr>
+<tr>
+<td>12</td>
+<td>7 プロトコル</td>
+<td>Signal、Noise</td>
+<td>ECDHE＋HKDF＋AEAD の簡易チャネル</td>
+</tr>
+<tr>
+<td>13</td>
+<td>7 実装</td>
+<td>サイドチャネル、鍵管理</td>
+<td>タイミング攻撃の再現、暗号コードのレビュー表</td>
+</tr>
+<tr>
+<td>14</td>
+<td>8 前回との接続</td>
+<td>耐量子暗号の復習、FIPS 203/204</td>
+<td>ML-KEM を使った鍵交換の動作確認</td>
+</tr>
+<tr>
+<td>15</td>
+<td>8 応用暗号</td>
+<td>Σプロトコル、秘密分散、LWE</td>
+<td>Shamir 秘密分散、Schnorr シミュレータ</td>
+</tr>
+<tr>
+<td>16</td>
+<td>8 総まとめ</td>
+<td>全体の見直し</td>
+<td>簡易セキュアチャネルの設計書、自己レビュー</td>
+</tr>
+</tbody>
+</table>
+<h3 id="演習環境">演習環境</h3>
+<ul>
+<li>Python 3.12 に pycryptodome と cryptography を入れる。自作実装の答え合わせ用で、本番コードのひな形ではない</li>
+<li>SageMath: 数論、楕円曲線、格子の実験に便利。Step 1 と Step 8 で使う</li>
+<li>OpenSSL CLI と Wireshark: 証明書と TLS の観察用</li>
+<li>Rust（RustCrypto）: 任意。定数時間実装やメモリ安全の観点を試したいときに使う</li>
+<li>業務が Java であれば、JCA の AES/GCM/NoPadding と Bouncy Castle で Step 3〜6 の演習を一度やり直すと、仕事の現場の API とつながる</li>
+</ul>
+<h3 id="進め方のルール">進め方のルール</h3>
+<ol>
+<li>各 Step の「到達チェック」に、ノートへ文章で回答を書く。口頭で分かったつもりを避けるための手順で、Obsidian の1ノートにまとめる形が管理しやすい</li>
+<li>証明は必ず手で書く。読んで納得した証明を白紙から再現できるかが、理解の本当の確認になる</li>
+<li>毎週末に、その週の「破られた例」を1つ決めて再現する。攻撃を知ることが、設計を覚える最短経路になる</li>
+<li>迷ったら定義に戻る。攻撃者は何ができて、何をすれば勝ちか、を最初に書く</li>
+</ol>
+<h3 id="修了チェック">修了チェック</h3>
+<ul>
+<li>[ ] IND-CPA、IND-CCA2、EUF-CMA の3つを、ゲームの手順として書ける</li>
+<li>[ ] 帰着の証明を、PRG、MAC、ElGamal のいずれかで白紙から書ける</li>
+<li>[ ] AES、SHA-2、SHA-3 の構造的な違いを、攻撃への強さの観点で説明できる</li>
+<li>[ ] AEAD の選定（AES-GCM、ChaCha20-Poly1305、GCM-SIV）をユースケースごとに説明できる</li>
+<li>[ ] RSA、DH、ECDSA、EdDSA の実装上の落とし穴を、各2つ以上挙げられる</li>
+<li>[ ] TLS 1.3 のハンドシェイクを、図なしで鍵の流れまで説明できる</li>
+<li>[ ] 暗号コードをレビューし、乱数、ノンス、比較、エラー処理の問題を指摘できる</li>
+<li>[ ] 耐量子暗号への移行で、先に何を棚卸しすべきかを説明できる</li>
+</ul>
+
+
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="assets/widgets.js" defer></script>
+</body>
+</html>

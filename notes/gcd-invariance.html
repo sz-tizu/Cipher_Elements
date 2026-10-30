@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>gcd(a, b) = gcd(b, r) はなぜ成り立つか | Cipher Elements</title>
+<meta name="description" content="互除法の土台になる一歩を、公約数の集合が変わらないことから証明する補足ノート。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-note">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">補足ノート · 第1回</div>
+<h1>gcd(a, b) = gcd(b, r) はなぜ成り立つか</h1>
+<p class="doc-lead">互除法の土台になる一歩を、公約数の集合が変わらないことから証明する補足ノート。</p>
+</header>
+<aside class="toc"><details open><summary>目次</summary><ol><li><a href="#まず具体例で見る">まず具体例で見る</a></li><li><a href="#鍵になる補題">鍵になる補題</a></li><li><a href="#定理と証明">定理と証明</a></li><li><a href="#1-を1段ずつ追う">(1) を1段ずつ追う</a></li><li><a href="#理解のポイント">理解のポイント</a></li><li><a href="#練習">練習</a></li></ol></details></aside>
+<article class="prose">
+<p>互除法の各ステップで gcd が変わらないのは、「a と b の公約数」と「b と r の公約数」が、集合としてまったく同じだからです。集合が同じなら、その最大値（gcd）も当然同じになります。gcd を直接比べるのではなく、公約数を全部並べて比べる、と考えるのが近道です。</p>
+<p>このノートは<a href="../lectures/01-math-foundations.html#s2">第1回講義資料の §2</a>の補足です。</p>
+<h2 id="まず具体例で見る">まず具体例で見る</h2>
+<p>a = 48、b = 18 とします。48 = 2·18 + 12 なので r = 12 です。</p>
+<table>
+<thead>
+<tr>
+<th>組</th>
+<th>公約数</th>
+<th>最大値</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>48 と 18</td>
+<td>1, 2, 3, 6</td>
+<td>6</td>
+</tr>
+<tr>
+<td>18 と 12</td>
+<td>1, 2, 3, 6</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<p>リストがまったく同じなので、最大値はどちらも 6 です。たまたま一致したのではなく、必ずこうなる、というのがこのノートで示すことです。</p>
+<figure class="widget" data-widget="common-divisors"></figure>
+
+<h2 id="鍵になる補題">鍵になる補題</h2>
+<p><strong>補題.</strong> d が x と y の両方を割り切るなら、d は任意の整数 m, n について mx + ny も割り切る。</p>
+<p><strong>証明.</strong> x = dk、y = dl と書けるので、mx + ny = d(mk + nl) となり、d の倍数です。∎</p>
+<p>物差しで言うと、「長さ d の物差しでぴったり測れる2本の棒は、何本つなげても、何本切り落としても、やはり d でぴったり測れる」というイメージです。</p>
+<h2 id="定理と証明">定理と証明</h2>
+<p><strong>定理.</strong> a = qb + r（q, r は整数）なら、gcd(a, b) = gcd(b, r)。</p>
+<p>示すのは「a と b の公約数」と「b と r の公約数」が同じ集合であることで、両方向の包含を示します。</p>
+<p><strong>(1) a と b の公約数は、b と r の公約数でもある</strong></p>
+<p>d | a かつ d | b とします。r = a − qb と書けるので、補題（m = 1、n = −q）より d | r です。d | b はもともと成り立っているので、d は b と r の公約数です。</p>
+<p><strong>(2) b と r の公約数は、a と b の公約数でもある</strong></p>
+<p>d | b かつ d | r とします。a = qb + r なので、補題（m = q、n = 1）より d | a です。d | b はもともと成り立っているので、d は a と b の公約数です。</p>
+<p>(1) と (2) より2つの集合は等しく、最大元も等しくなります。∎</p>
+<h2 id="1-を1段ずつ追う">(1) を1段ずつ追う</h2>
+<p>(1) で言っていることは、「a と b を両方割り切る数は、余り r も割り切る」ということだけです。数字の例で1段ずつ追ってから、文字の式に置き換えます。a = 48、b = 18、r = 12 として、公約数 6 が 12 も割り切ることを示します。</p>
+<h3 id="ステップ1-割り切るを言い換える">ステップ1: 「割り切る」を言い換える</h3>
+<p>「6 が 48 を割り切る」は、「48 は 6 のかたまりがちょうど何個かでできている」と同じ意味です。</p>
+<ul>
+<li>48 = 6 × 8（6 のかたまり 8 個）</li>
+<li>18 = 6 × 3（6 のかたまり 3 個）</li>
+</ul>
+<p>6 個入りパックのお菓子で考えると分かりやすいです。48 個は 8 パック、18 個は 3 パックで、どちらもバラがありません。</p>
+<h3 id="ステップ2-余り-12-がどう作られたか">ステップ2: 余り 12 がどう作られたか</h3>
+<p>余りは「48 から 18 を取れるだけ取った残り」です。18 を2回取ったので、こう書けます。</p>
+<pre><code>12 = 48 − 18 − 18 = 48 − 2 × 18
+</code></pre>
+<h3 id="ステップ3-パックの数で数え直す">ステップ3: パックの数で数え直す</h3>
+<p>ステップ1の言い換えを、そのまま代入します。</p>
+<pre><code>12 = 48 − 2 × 18
+   = (6 × 8) − 2 × (6 × 3)
+   = (6 × 8) − (6 × 6)       ← 18 を2回 = 3パック × 2 = 6パック
+   = 6 × (8 − 6)             ← どちらも「6 × 何か」なのでまとめる
+   = 6 × 2
+</code></pre>
+<p>お菓子で言うと、8 パックから 6 パックを取り除いたら 2 パック残った、というだけの話です。パック単位で出し入れしている限り、バラは一度も出てきません。だから残りの 12 個も、6 個入りパックちょうど 2 つになります。</p>
+<h3 id="ステップ4-文字で一般化する">ステップ4: 文字で一般化する</h3>
+<p>上の計算の数字を文字に置き換えると、証明になります。</p>
+<ul>
+<li>d が a を割り切る → a = d × k（k は整数。上の例では 8）</li>
+<li>d が b を割り切る → b = d × l（l は整数。上の例では 3）</li>
+<li>余りの作り方 → r = a − q × b（q は商。上の例では 2）</li>
+</ul>
+<p>代入します。</p>
+<pre><code>r = a − q × b
+  = d × k − q × (d × l)
+  = d × (k − q × l)
+</code></pre>
+<p>k、q、l はどれも整数なので、k − q × l も整数です（上の例では 8 − 2 × 3 = 2）。つまり r は「d × 整数」の形をしていて、d は r を割り切ります。</p>
+<h2 id="理解のポイント">理解のポイント</h2>
+<ul>
+<li><strong>なぜ両方向が必要か</strong>: (1) だけでは「a, b の公約数は b, r の公約数に含まれる」までしか言えず、gcd(a, b) ≤ gcd(b, r) しか出ません。逆向きの (2) で ≥ も言えて、等号になります。</li>
+<li><strong>本質は「a, b, r のうち2つから残り1つが作れる」こと</strong>: a = qb + r という1本の式で、(a, b) からは r = a − qb が、(b, r) からは a = qb + r が作れます。互いに作り合える組は、割り切る数の情報もまったく同じになります。</li>
+<li><strong>割り切るのは「両方」が前提</strong>: 8 は 48 を割り切りますが、18 は割り切りません。18 がパックで表せないので、ステップ3でバラが出てしまい、12 が 8 で割り切れるとは言えません（実際に割り切れません）。</li>
+<li><strong>「整数」が効いている</strong>: d で割り切れる、とは「d × 整数」と書けることです。整数同士の掛け算と引き算の結果は必ず整数なので、パックの数（k − q × l）も整数のままになります。</li>
+<li><strong>「余り」である必要はない</strong>: 実は q がどんな整数でも成り立ちます。gcd(48, 18) = gcd(30, 18) = gcd(12, 18) のように、何回引いても変わりません。余り（一番小さくなるまで引いたもの）を使うのは、数を一気に小さくして早く終わらせるためだけです。</li>
+<li><strong>長方形の図との対応</strong>: 正方形を切り取っても「残りを敷き詰められるタイル」が変わらない、という第1回 §2 の説明は、この定理を図にしたものです。</li>
+</ul>
+<h2 id="練習">練習</h2>
+<ol>
+<li>a = 1071、b = 462、r = 147、d = 21 の場合を、ステップ1〜3のとおりに書き下せ</li>
+<li>同じ数で、(2) の向き（147 と 462 を割り切る 21 が 1071 も割り切る）を確かめよ</li>
+<li>6 と 10 について、どんな q を選んでも gcd(10 − 6q, 6) が 2 になることを、q = 1, 2, −1 で確かめよ</li>
+</ol>
+<h3 id="解答">解答</h3>
+<ol>
+<li>1071 = 21 × 51、462 = 21 × 22。147 = 1071 − 2 × 462 = 21 × 51 − 2 × (21 × 22) = 21 × (51 − 44) = 21 × 7</li>
+<li>1071 = 2 × 462 + 147 = 2 × (21 × 22) + 21 × 7 = 21 × (44 + 7) = 21 × 51</li>
+<li>q = 1: gcd(4, 6) = 2、q = 2: gcd(−2, 6) = 2、q = −1: gcd(16, 6) = 2</li>
+</ol>
+
+
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>

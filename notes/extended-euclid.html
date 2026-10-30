@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>拡張ユークリッドの互除法を直感で掴む | Cipher Elements</title>
+<meta name="description" content="ax + by = gcd の係数を、数直線のジャンプと「レシピ」の帳簿で理解する補足ノート。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-note">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">補足ノート · 第1回</div>
+<h1>拡張ユークリッドの互除法を直感で掴む</h1>
+<p class="doc-lead">ax + by = gcd の係数を、数直線のジャンプと「レシピ」の帳簿で理解する補足ノート。</p>
+</header>
+<aside class="toc"><details open><summary>目次</summary><ol><li><a href="#何を求めたいのか">何を求めたいのか</a></li><li><a href="#核心のアイデア-余りにレシピを持たせる">核心のアイデア: 余りに「レシピ」を持たせる</a></li><li><a href="#動く図-レシピどおりに跳ぶと余りに着く">動く図: レシピどおりに跳ぶと、余りに着く</a></li><li><a href="#手で追う-2つのやり方は同じもの">手で追う: 2つのやり方は同じもの</a></li><li><a href="#なぜ逆元になるのか">なぜ逆元になるのか</a></li><li><a href="#少し形式的に-不変式と行列">少し形式的に: 不変式と行列</a></li><li><a href="#つまずきやすい点と練習問題">つまずきやすい点と練習問題</a></li></ol></details></aside>
+<article class="prose">
+<h2 id="何を求めたいのか">何を求めたいのか</h2>
+<p>普通の互除法が答えるのは「gcd はいくつか」だけです。拡張互除法はそれに加えて、「その gcd を、a と b を何回ずつ足し引きすれば作れるか」も答えます。この資料は、第1回講義の §2 で「下から逆にたどる」とだけ書いた部分を、イメージから組み立て直すための補足です。</p>
+<h3 id="数直線のジャンプで考える">数直線のジャンプで考える</h3>
+<p>数直線の 0 に立っていて、使える動きは「40 進む・戻る」と「7 進む・戻る」の2種類だけだとします。このとき、1 の位置に立てるでしょうか。</p>
+<p>立てます。40 で3回進んで 120、そこから 7 で17回戻ると 120 − 119 = 1 です。式にすると次のとおりです。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">40</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">−</span><span class="mord">17</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div>
+
+<p>拡張互除法は、この「3回と −17回」を見つけるアルゴリズムです。一般に、a と b のジャンプで立てる位置は gcd(a, b) の倍数だけで、とくに gcd そのものに立てる、というのがベズーの等式です。</p>
+<h3 id="なぜ-gcd-の倍数にしか立てないのか">なぜ gcd の倍数にしか立てないのか</h3>
+<p>40 も 7 も、ジャンプの幅は gcd の倍数です。gcd の倍数をいくら足し引きしても gcd の倍数にしかならないので、gcd より細かい位置には立てません。たとえば 48 と 18 なら、どちらも 6 の倍数なので、立てるのは 6 の倍数の位置だけです。</p>
+<p>逆に「gcd そのものには必ず立てる」ほうが非自明で、それを具体的な回数つきで示すのが拡張互除法です。</p>
+<h3 id="暗号で何に使うのか">暗号で何に使うのか</h3>
+<p>RSA の秘密鍵 d は、e·d ≡ 1 (mod φ(n)) を満たす数です。これは「e のジャンプと φ(n) のジャンプで 1 に立つ回数を探せ」という問題そのもので、e の回数がそのまま d になります。この理由は「なぜ逆元になるのか」の節で説明します。</p>
+<h2 id="核心のアイデア-余りにレシピを持たせる">核心のアイデア: 余りに「レシピ」を持たせる</h2>
+<p>拡張互除法の要点は1つだけです。互除法で出てくるすべての余りに、「40 と 7 をそれぞれ何個使って作ったか」というレシピを付けて持ち歩きます。最後の余り gcd にたどり着いたとき、そのレシピが答えになっています。</p>
+<h3 id="値と内訳を一緒に持つ">値と内訳を一緒に持つ</h3>
+<p>家計簿で、金額と一緒に内訳を書いておくイメージです。最初の2つは内訳が自明です。</p>
+<ul>
+<li>40 = 1個の40 + 0個の7、レシピ (1, 0)</li>
+<li>7 = 0個の40 + 1個の7、レシピ (0, 1)</li>
+</ul>
+<p>互除法の1ステップは、いつも「古い余り − q × 新しい余り」という計算です。値を引き算するなら、内訳も同じように引き算すれば帳尻が合います。これだけで、次の余りのレシピが自動的に決まります。</p>
+<h3 id="40-と-7-で実際にやる">40 と 7 で実際にやる</h3>
+<table>
+<thead>
+<tr>
+<th>余り r</th>
+<th>計算</th>
+<th>レシピ (40の個数, 7の個数)</th>
+<th>検算</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>40</td>
+<td>出発点</td>
+<td>(1, 0)</td>
+<td>40</td>
+</tr>
+<tr>
+<td>7</td>
+<td>出発点</td>
+<td>(0, 1)</td>
+<td>7</td>
+</tr>
+<tr>
+<td>5</td>
+<td>40 − 5·7</td>
+<td>(1, 0) − 5·(0, 1) = (1, −5)</td>
+<td>40 − 35 = 5</td>
+</tr>
+<tr>
+<td>2</td>
+<td>7 − 1·5</td>
+<td>(0, 1) − 1·(1, −5) = (−1, 6)</td>
+<td>−40 + 42 = 2</td>
+</tr>
+<tr>
+<td>1</td>
+<td>5 − 2·2</td>
+<td>(1, −5) − 2·(−1, 6) = (3, −17)</td>
+<td>120 − 119 = 1</td>
+</tr>
+</tbody>
+</table>
+<p>各行で使っているのは、すぐ上の2行だけです。だから、表を上から順に埋めていくだけで、最後の行に答え (3, −17) が出てきます。</p>
+<h3 id="下から逆にたどるとの関係">「下から逆にたどる」との関係</h3>
+<p>講義資料では、互除法を最後まで進めてから、式を下から代入し直していました。あれは、レシピを最後にまとめて計算し直しているのと同じことです。上から帳簿をつけていけば、逆にたどる手間はいりません。実装でも、この前向きの方法が普通に使われます。</p>
+<h2 id="動く図-レシピどおりに跳ぶと余りに着く">動く図: レシピどおりに跳ぶと、余りに着く</h2>
+<p>表の各行のレシピ (s, t) は「40 で s 回」「7 で t 回」跳ぶ指示です。上のボタンで行を切り替えると、どのレシピで跳んでも、その行の余り r にちょうど着地するのが分かります。</p>
+<figure class="widget" data-widget="jump-line"></figure>
+
+<p>行が進むほど着地点は 40 → 7 → 5 → 2 → 1 と 0 に近づきますが、ジャンプの回数は増えていきます。大きく進んで少しだけ戻りすぎる、という細かい調整を繰り返して、最後に gcd の位置まで寄せていくイメージです。</p>
+<h2 id="手で追う-2つのやり方は同じもの">手で追う: 2つのやり方は同じもの</h2>
+<p>拡張互除法の計算法には「後ろから代入」と「前から帳簿」の2つがあり、どちらも同じ答えになります。前者は互除法の式をそのまま使うので手計算向き、後者は一度で終わるので実装向きです。</p>
+<h3 id="後ろから代入する">後ろから代入する</h3>
+<p>まず普通の互除法を最後まで進めます。</p>
+<pre><code>40 = 5·7 + 5   →  5 = 40 − 5·7
+ 7 = 1·5 + 2   →  2 = 7 − 1·5
+ 5 = 2·2 + 1   →  1 = 5 − 2·2
+</code></pre>
+<p>右側は「余り = 割られる数 − 商 × 割る数」の形に書き直したものです。1 の式から始めて、一番小さい数を1つ上の式で置き換えていきます。</p>
+<pre><code>1 = 5 − 2·2
+  = 5 − 2·(7 − 1·5)        2 を置き換えた
+  = 3·5 − 2·7               5 と 7 でまとめた
+  = 3·(40 − 5·7) − 2·7      5 を置き換えた
+  = 3·40 − 17·7             40 と 7 でまとめた
+</code></pre>
+<p>コツは、置き換えたあとに「どの数が何個あるか」で必ずまとめ直すことです。まとめずに展開すると、式がすぐ読めなくなります。</p>
+<h3 id="前から帳簿をつける">前から帳簿をつける</h3>
+<p>「核心のアイデア」の節で作った表が、このやり方です。互除法の各ステップと同時に、レシピの引き算も済ませていきます。後ろから代入する方法は、この表の計算を最後にまとめてやり直しているだけです。</p>
+<h3 id="もう1例-37-の-mod-100-での逆元">もう1例: 37 の mod 100 での逆元</h3>
+<table>
+<thead>
+<tr>
+<th>余り r</th>
+<th>計算</th>
+<th>レシピ (100の個数, 37の個数)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>出発点</td>
+<td>(1, 0)</td>
+</tr>
+<tr>
+<td>37</td>
+<td>出発点</td>
+<td>(0, 1)</td>
+</tr>
+<tr>
+<td>26</td>
+<td>100 − 2·37</td>
+<td>(1, −2)</td>
+</tr>
+<tr>
+<td>11</td>
+<td>37 − 1·26</td>
+<td>(−1, 3)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>26 − 2·11</td>
+<td>(3, −8)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>11 − 2·4</td>
+<td>(−7, 19)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>4 − 1·3</td>
+<td>(10, −27)</td>
+</tr>
+</tbody>
+</table>
+<p>100·10 + 37·(−27) = 1000 − 999 = 1 です。37 の個数 −27 を mod 100 で正にすると 73 で、37 × 73 = 2701 ≡ 1 (mod 100) と検算できます。</p>
+<h2 id="なぜ逆元になるのか">なぜ逆元になるのか</h2>
+<p>mod 40 の時計の上では、40 のジャンプは一周して元の場所に戻るので、無いのと同じになります。だから 40·3 + 7·(−17) = 1 を mod 40 で見ると、40 の項が消えて 7·(−17) ≡ 1 だけが残ります。これが「7 の逆元は −17」の意味です。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.1924em;vertical-align:-1.548em;"></span><span class="mord munder"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6444em;"><span style="top:-1.627em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mrel mtight">≡</span><span class="mspace mtight" style="margin-right:0.1952em;"></span><span class="mord mtight">0</span><span class="mspace allowbreak mtight"></span><span class="mspace mtight" style="margin-right:0.5204em;"></span><span class="mopen mtight">(</span><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight">mod</span></span></span><span class="mspace mtight" style="margin-right:0.3903em;"></span><span class="mord mtight">40</span><span class="mclose mtight">)</span></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord munder"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6444em;"><span class="svg-align" style="top:-2.352em;"><span class="pstrut" style="height:3em;"></span><span class="stretchy" style="height:0.548em;min-width:1.6em;"><span class="brace-left" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMinYMin slice"><path d="M0 6l6-6h17c12.688 0 19.313.3 20 1 4 4 7.313 8.3 10 13
+ 35.313 51.3 80.813 93.8 136.5 127.5 55.688 33.7 117.188 55.8 184.5 66.5.688
+ 0 2 .3 4 1 18.688 2.7 76 4.3 172 5h399450v120H429l-6-1c-124.688-8-235-61.7
+-331-161C60.687 138.7 32.312 99.3 7 54L0 41V6z"/></svg></span><span class="brace-center" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMidYMin slice"><path d="M199572 214
+c100.7 8.3 195.3 44 280 108 55.3 42 101.7 93 139 153l9 14c2.7-4 5.7-8.7 9-14
+ 53.3-86.7 123.7-153 211-199 66.7-36 137.3-56.3 212-62h199568v120H200432c-178.3
+ 11.7-311.7 78.3-403 201-6 8-9.7 12-11 12-.7.7-6.7 1-18 1s-17.3-.3-18-1c-1.3 0
+-5-4-11-12-44.7-59.3-101.3-106.3-170-141s-145.3-54.3-229-60H0V214z"/></svg></span><span class="brace-right" style="height:0.548em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.548em" viewBox="0 0 400000 548" preserveAspectRatio="xMaxYMin slice"><path d="M399994 0l6 6v35l-6 11c-56 104-135.3 181.3-238 232-57.3
+ 28.7-117 45-179 50H-300V214h399897c43.3-7 81-15 113-26 100.7-33 179.7-91 237
+-174 2.7-5 6-9 10-13 .7-1 7.3-1 20-1h17z"/></svg></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">40</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.648em;"><span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.548em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">−</span><span class="mord">17</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6684em;vertical-align:-0.024em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:1em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⟹</span><span class="mspace" style="margin-right:1em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">−</span><span class="mord">17</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≡</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span><span class="mspace allowbreak"></span><span class="mspace" style="margin-right:1em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.3333em;"></span><span class="mord">40</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>−17 は時計の上では 40 足した 23 と同じ位置なので、7⁻¹ ≡ 23 (mod 40) です。7 × 23 = 161 = 4·40 + 1 で確かめられます。</p>
+<h3 id="1回の計算で逆元が2つ手に入る">1回の計算で、逆元が2つ手に入る</h3>
+<p>同じ式を今度は mod 7 の時計で見ると、7 の項が消えて 40·3 ≡ 1 (mod 7) が残ります。つまり 40 の mod 7 での逆元は 3 です。40 ≡ 5 なので、5 × 3 = 15 ≡ 1 で合っています。レシピの2つの数は、それぞれ相手の法での逆元になっているわけです。</p>
+<h3 id="gcd-が-1-でないと1-には立てない">gcd が 1 でないと、1 には立てない</h3>
+<p>6 と 10 で同じことを考えます。どちらのジャンプも偶数なので、どう組み合わせても偶数の位置にしか立てません。mod 10 の時計で 6 ずつ進むと 6, 2, 8, 4, 0 と偶数だけを回り、1 には永遠に着きません。だから 6 には mod 10 での逆元がありません。</p>
+<p>「逆元が存在する ⟺ gcd = 1」という定理は、この「1 の位置に立てるかどうか」を言い換えたものです。</p>
+<h2 id="少し形式的に-不変式と行列">少し形式的に: 不変式と行列</h2>
+<p>イメージが掴めたら、同じことを証明の言葉で書いておきます。拡張互除法の正しさは「各行でレシピが正しい」という不変式1つで説明でき、その不変式は1ステップの操作が線形であることから保たれます。</p>
+<h3 id="不変式">不変式</h3>
+<p>i 行目の値を (r_i, s_i, t_i) とし、次の式が成り立つことを不変式と呼びます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.5945em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span></span></div>
+
+<p>出発点の2行 (a, 1, 0) と (b, 0, 1) では明らかに成り立ちます。次の行は q = ⌊r_(i−1) / r_i⌋ を使って、3つの成分すべてを同じ規則で作ります。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6389em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>上の2行が不変式を満たせば、その引き算も満たします。r が 0 になる直前の行は r = gcd(a, b) なので、その行の (s, t) がベズーの等式の係数です。</p>
+<h3 id="行列で書くと">行列で書くと</h3>
+<p>連続する2行をまとめると、1ステップは行列を1つ掛ける操作になります。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.4em;vertical-align:-0.95em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.4em;vertical-align:-0.95em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">0</span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">−</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.95em;"><span></span></span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></div>
+
+<p>互除法全体は、この小さな行列の積にすぎません。左の行列は行列式が −1 で、整数の逆行列を持ちます。つまり各ステップは情報を失わない変換で、だから最後の行から元の a, b の関係を正確に復元できます。</p>
+<h3 id="実装は-t-だけ追えば足りる">実装は t だけ追えば足りる</h3>
+<p>逆元が欲しいだけなら、s は使いません。t だけを更新すれば十分で、係数の大きさも |t| ≤ n を超えないので、多倍長整数でも効率よく動きます。</p>
+<pre><code class="language-python">def inverse(a, n):
+    # 不変式: r0 ≡ t0·a, r1 ≡ t1·a (mod n)
+    r0, r1, t0, t1 = n, a % n, 0, 1
+    while r1 != 0:
+        q = r0 // r1
+        r0, r1 = r1, r0 - q * r1
+        t0, t1 = t1, t0 - q * t1
+    if r0 != 1:
+        raise ValueError(&quot;gcd が 1 でないので逆元なし&quot;)
+    return t0 % n
+</code></pre>
+<h2 id="つまずきやすい点と練習問題">つまずきやすい点と練習問題</h2>
+<h3 id="つまずきやすい点">つまずきやすい点</h3>
+<ul>
+<li><strong>答えが負の数になる</strong>: レシピの係数は負になるのが普通です。逆元として使うときは、法を足して 0〜n−1 に収めます（−17 → 23）</li>
+<li><strong>どちらの係数が逆元か</strong>: 「mod n の逆元」なら、n ではない側の数の係数です。n の係数は捨ててかまいません</li>
+<li><strong>a &gt; n で始めた</strong>: 最初のステップの商が 0 になり、2つの数が入れ替わるだけです。そのまま続ければ正しく動きます</li>
+<li><strong>代入のあとにまとめない</strong>: 後ろから代入する方法では、置き換えるたびに「どの数が何個か」でまとめ直します</li>
+<li><strong>検算を省く</strong>: a × 答え mod n が 1 になるかを、毎回必ず確かめます。符号の取り違えはこれで全部見つかります</li>
+</ul>
+<h3 id="練習問題">練習問題</h3>
+<ol>
+<li>11 の mod 26 での逆元を、前から帳簿をつける方法で求めよ</li>
+<li>48 と 18 について、48x + 18y = 6 を満たす整数 x, y を1組求めよ</li>
+<li>本文の 40 と 7 の表から、40 の mod 7 での逆元を読み取れ（新しい計算はしない）</li>
+<li>公開指数 e = 65537、φ(n) = 3120 の RSA で、秘密指数 d を求めよ（ヒント: まず 65537 mod 3120 を計算する）</li>
+<li>6 と 10 のレシピ表を作り、最後の行が 1 ではなく 2 で止まることを確かめよ</li>
+</ol>
+<h3 id="解答">解答</h3>
+<ol>
+<li>26 (1, 0)、11 (0, 1)、4 = 26 − 2·11 (1, −2)、3 = 11 − 2·4 (−2, 5)、1 = 4 − 3 (3, −7)。26·3 + 11·(−7) = 1 なので 11⁻¹ ≡ −7 ≡ 19。検算 11 × 19 = 209 = 8·26 + 1</li>
+<li>48 = 2·18 + 12、18 = 1·12 + 6。12 = 48 − 2·18 を代入して 6 = 18 − 12 = 3·18 − 48。x = −1, y = 3</li>
+<li>レシピ (3, −17) の 40 の係数 3 が答え。40 ≡ 5 (mod 7) で、5 × 3 = 15 ≡ 1</li>
+<li>65537 = 21·3120 + 17 なので、17 の mod 3120 での逆元を求めればよい。答えは d = 2753（17 × 2753 = 46801 = 15·3120 + 1）。演習として表を自分で埋めて確かめてください</li>
+<li>10 (1, 0)、6 (0, 1)、4 = 10 − 6 (1, −1)、2 = 6 − 4 (−1, 2)、0 = 4 − 2·2。最後の行は 2 = 10·(−1) + 6·2 で、1 には届かない</li>
+</ol>
+<p><a href="../lectures/01-math-foundations.html#s2">第1回講義資料の §2</a> と、<a href="../labs/01-lab.html#euclid">ラボの §2 タブ</a>（表に s, t の列があります）も合わせて使ってください。</p>
+
+
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>

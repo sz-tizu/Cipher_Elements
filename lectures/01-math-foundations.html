@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第1回 数学的基盤 | Cipher Elements</title>
+<meta name="description" content="整数論・代数・確率・計算量。RSA と Diffie-Hellman が動く理由を、手で計算して説明できるようにする回。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-lecture">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">Step 1 · 1〜2週<span class="chip chip-published">公開中</span></div>
+<h1>第1回 数学的基盤</h1>
+<p class="doc-lead">整数論・代数・確率・計算量。RSA と Diffie-Hellman が動く理由を、手で計算して説明できるようにする回。</p>
+</header>
+<aside class="toc"><details open><summary>目次</summary><ol><li><a href="#この講義について">この講義について</a></li><li><a href="#s1">§1 整除と合同式</a></li><li><a href="#s2">§2 ユークリッドの互除法と逆元</a></li><li><a href="#s3">§3 フェルマーの小定理とオイラーの定理</a></li><li><a href="#s4">§4 中国剰余定理</a></li><li><a href="#s5">§5 群・環・体と有限体</a></li><li><a href="#s6">§6 確率: 誕生日のパラドックス</a></li><li><a href="#s7">§7 計算量: 多項式時間と無視できる関数</a></li><li><a href="#演習問題">演習問題</a></li><li><a href="#解答と解説">解答と解説</a></li></ol></details></aside>
+<article class="prose">
+<h2 id="この講義について">この講義について</h2>
+<p>第1回では、暗号を読むのに必要な数学を、整数論・代数・確率・計算量の4本に絞って一巡します。目標は、RSA と Diffie-Hellman が「なぜ動くか」「なぜ安全だと考えられているか」を、自分の手で計算して説明できる状態になることです。</p>
+<h3 id="到達目標">到達目標</h3>
+<ul>
+<li>合同式の計算と、拡張ユークリッドの互除法による逆元の計算を手でできる</li>
+<li>フェルマーの小定理とオイラーの定理を述べ、RSA の復号が成り立つ理由を示せる</li>
+<li>中国剰余定理を使って連立合同式を解ける</li>
+<li>群・環・体の定義を述べ、有限体 GF(p) と GF(2^8) の演算ができる</li>
+<li>誕生日のパラドックスから、n ビットのハッシュの衝突耐性が約 n/2 ビットである理由を説明できる</li>
+<li>「無視できる関数」の定義を述べ、具体例を判定できる</li>
+</ul>
+<h3 id="前提">前提</h3>
+<p>高校数学（整数の性質、指数・対数、確率の基本）だけを前提にします。集合と写像の記号（∈、→、全単射）は既知とします。</p>
+<h3 id="時間配分60分">時間配分（60分）</h3>
+<table>
+<thead>
+<tr>
+<th>節</th>
+<th>内容</th>
+<th>目安</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§1</td>
+<td>整除と合同式</td>
+<td>6分</td>
+</tr>
+<tr>
+<td>§2</td>
+<td>互除法と逆元</td>
+<td>10分</td>
+</tr>
+<tr>
+<td>§3</td>
+<td>フェルマー・オイラー、高速冪</td>
+<td>10分</td>
+</tr>
+<tr>
+<td>§4</td>
+<td>中国剰余定理</td>
+<td>7分</td>
+</tr>
+<tr>
+<td>§5</td>
+<td>群・環・体、有限体</td>
+<td>12分</td>
+</tr>
+<tr>
+<td>§6</td>
+<td>誕生日のパラドックス</td>
+<td>7分</td>
+</tr>
+<tr>
+<td>§7</td>
+<td>計算量と無視できる関数</td>
+<td>8分</td>
+</tr>
+</tbody>
+</table>
+<p>30分版にするなら、§1〜§3 と §7 を本編にし、§4〜§6 は演習問題と一緒に後で自習してください。</p>
+<h3 id="付属ラボ">付属ラボ</h3>
+<p>各節の内容は、<a href="../labs/01-lab.html">暗号数学ラボ 第1回</a>で数字を変えて試せます。時計算術、互除法のステップ実行、square-and-multiply とおもちゃの RSA、中国剰余定理の表、巡回群の軌道、誕生日攻撃の実験、無視できる関数のグラフの7つです。各節の末尾にも、対応するタブへのリンクを置いています。</p>
+<h2 id="s1">§1 整除と合同式</h2>
+<p>合同式は「余りだけを見る算術」です。時計の12時の次が1時になるのと同じで、暗号のほぼすべての計算はこの世界で行われます。</p>
+<h3 id="定義">定義</h3>
+<p>整数 a, b について、ある整数 k で b = ka と書けるとき「a は b を割り切る」といい、a | b と書きます。</p>
+<p>正の整数 n（法、modulus）について、n | (a − b) のとき a と b は n を法として合同といい、次のように書きます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4637em;"></span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≡</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span><span class="mspace allowbreak"></span><span class="mspace" style="margin-right:1em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.3333em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>同じことですが、「a と b を n で割った余りが等しい」と言い換えられます。余りを返す演算 a mod n は 0 以上 n−1 以下の値を返すものとします。</p>
+<h3 id="例">例</h3>
+<ul>
+<li>17 ≡ 5 (mod 12)。17 − 5 = 12 が 12 で割り切れるため</li>
+<li>−3 ≡ 4 (mod 7)。負の数の余りも 0〜6 に収める（−3 + 7 = 4）</li>
+<li>プログラミング言語の % は負数で負の値を返すことがあります。Java の -3 % 7 は −3 で、Python は 4 です。暗号実装でよく踏むバグなので、Java では Math.floorMod を使います</li>
+</ul>
+<figure class="widget" data-widget="clock12"></figure>
+
+<p>数直線を時計に巻きつけると、12 ずつ離れた数が同じ目盛りに重なります。</p>
+<h3 id="計算規則">計算規則</h3>
+<p>a ≡ a' かつ b ≡ b'（法 n）なら、次が成り立ちます。</p>
+<ul>
+<li>a + b ≡ a' + b'</li>
+<li>a − b ≡ a' − b'</li>
+<li>ab ≡ a'b'</li>
+</ul>
+<p>つまり、足し算・引き算・掛け算は「途中でいつ余りを取ってもよい」ということです。これが、巨大な数の冪を現実的な時間で計算できる根拠になります。</p>
+<p>一方で、割り算はそのままでは使えません。たとえば 2·3 ≡ 2·8 (mod 10) ですが、両辺を2で割った 3 ≡ 8 (mod 10) は成り立ちません。割り算の代わりに「逆元」を掛ける必要があり、それが次の §2 のテーマです。</p>
+<h3 id="剰余類の集合">剰余類の集合</h3>
+<p>n を法とする余りの集合を Z_n = {0, 1, …, n−1} と書きます。Z_n の上で足し算と掛け算を mod n で行うのが、以降の議論の舞台です。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#clock">§1 時計算術</a>。a に負の数を入れて、Java の % との違いを確かめてください。</p>
+<h2 id="s2">§2 ユークリッドの互除法と逆元</h2>
+<p>a の逆元 a⁻¹ は、gcd(a, n) = 1 のときに限って存在し、拡張ユークリッドの互除法で高速に求まります。RSA の秘密鍵 d は、まさにこの計算で作られます。</p>
+<h3 id="最大公約数と互除法">最大公約数と互除法</h3>
+<p>互除法は「gcd(a, b) = gcd(b, a mod b)」を繰り返すだけのアルゴリズムです。a と b の公約数は、余り a mod b = a − qb も割り切るので、公約数の集合が変わらないことから成り立ちます。</p>
+<p>例として gcd(40, 7) を求めます。</p>
+<pre><code>40 = 5·7 + 5
+ 7 = 1·5 + 2
+ 5 = 2·2 + 1
+ 2 = 2·1 + 0   → gcd = 1
+</code></pre>
+<p>各ステップで余りは少なくとも半分ずつ小さくなる（2ステップで半分以下）ため、ステップ数は桁数に比例します。2048 ビットの数でも数千ステップで終わります。</p>
+<h3 id="直感-長方形を正方形で切り取る">直感: 長方形を正方形で切り取る</h3>
+<p>互除法は、横 a・縦 b の長方形を「とれるだけ大きな正方形」で切り取っていく作業と同じです。一辺 b の正方形を q 枚取ると、残りは横 a mod b・縦 b の長方形になります。これを繰り返し、最後に余りなく敷き詰めた正方形の一辺が gcd(a, b) です。</p>
+<figure class="widget" data-widget="euclid-rect"></figure>
+
+<p>「次へ」を押すたびに、残った長方形の辺の組が互除法の各行と同じ順で小さくなります。</p>
+<p>最後の正方形が gcd になる理由は、次の3点です。</p>
+<ul>
+<li>一辺 d の小さなタイルで長方形を敷き詰められるのは、d が a と b の公約数のときだけ</li>
+<li>切り取った正方形はどれも同じタイルで敷き詰められるので、「残りを敷き詰められるタイル」は元の長方形と変わらない。これが「公約数の集合が変わらない」の図形版</li>
+<li>最後の正方形は、それ自身がタイルになれる一番大きなもの。だから一辺が最大公約数になる</li>
+</ul>
+<p>もう一つのイメージは、長さ a と b の2本の物差しです。長いほうから短いほうを引けるだけ引き、残った端数で今度は短いほうを測り直します。ユークリッドの『原論』にある原型はこの引き算の繰り返しで、mod はそれをまとめて1回で済ませたものです。</p>
+<p>公約数が 1 より大きい例も見ておきます。48 × 18 なら 48 = 2·18 + 12、18 = 1·12 + 6、12 = 2·6 + 0 で、6 × 6 のタイルでぴったり埋まります。好きな数での切り取りは、ラボの §2 でアニメーションとして見られます。</p>
+<h3 id="ベズーの等式と拡張互除法">ベズーの等式と拡張互除法</h3>
+<p>任意の整数 a, b に対し、次を満たす整数 x, y が存在します（ベズーの等式）。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">a</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">b</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop"><span style="margin-right:0.01389em;">g</span>cd</span><span class="mopen">(</span><span class="mord mathnormal">a</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">b</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>互除法を下から逆にたどると x, y が求まります。上の例では次のとおりです。</p>
+<pre><code>1 = 5 − 2·2
+  = 5 − 2·(7 − 1·5)   = 3·5 − 2·7
+  = 3·(40 − 5·7) − 2·7 = 3·40 − 17·7
+</code></pre>
+<p>よって 40·3 + 7·(−17) = 1 です。</p>
+<h3 id="逆元">逆元</h3>
+<p>ax ≡ 1 (mod n) を満たす x を、法 n での a の逆元といい a⁻¹ と書きます。</p>
+<p><strong>定理.</strong> a の逆元が存在する ⟺ gcd(a, n) = 1</p>
+<ul>
+<li>(⇐) ベズーより ax + ny = 1。両辺を mod n で見ると ax ≡ 1</li>
+<li>(⇒) ax ≡ 1 なら ax − 1 = kn。gcd(a, n) を d とすると d は ax − kn = 1 を割り切るので d = 1</li>
+</ul>
+<p>上の例を mod 40 で見ると 7·(−17) ≡ 1 なので、7⁻¹ ≡ −17 ≡ 23 (mod 40) です。検算すると 7·23 = 161 = 4·40 + 1 で合っています。</p>
+<h3 id="帰結">帰結</h3>
+<ul>
+<li>p が素数なら、1〜p−1 のすべての元に逆元がある。つまり Z_p では 0 以外で割り算ができる（§5 で「体」と呼ぶ性質）</li>
+<li>逆元を持つ元の集合を Z_n^* と書く。例: Z_10^* = {1, 3, 7, 9}</li>
+</ul>
+<h3 id="実装の型python">実装の型（Python）</h3>
+<pre><code class="language-python">def egcd(a, b):
+    # 戻り値 (g, x, y) は a*x + b*y = g を満たす
+    if b == 0:
+        return a, 1, 0
+    g, x, y = egcd(b, a % b)
+    return g, y, x - (a // b) * y
+
+def inv(a, n):
+    g, x, _ = egcd(a, n)
+    if g != 1:
+        raise ValueError(&quot;逆元なし&quot;)
+    return x % n
+</code></pre>
+<p>Python 3.8 以降なら pow(a, -1, n) でも求まりますが、一度は自分で書いて動きを確認してください。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#euclid">§2 拡張互除法</a>。1行ずつ進めて、各行で不変式 r = s·n + t·a が保たれる様子を追ってください。</p>
+<p><strong>補足資料:</strong> 拡張互除法の直感的な説明は、<a href="../notes/extended-euclid.html">拡張ユークリッドの互除法を直感で掴む</a>にまとめています。</p>
+<h2 id="s3">§3 フェルマーの小定理とオイラーの定理</h2>
+<p>Z_n^* の元を φ(n) 乗すると必ず 1 に戻る、というのがオイラーの定理です。RSA の暗号化と復号が互いに打ち消し合うのは、この「指数が φ(n) で一周する」性質のおかげです。</p>
+<h3 id="オイラーの-φ-関数">オイラーの φ 関数</h3>
+<p>φ(n) は、1 以上 n 以下で n と互いに素な整数の個数、つまり |Z_n^*| です。</p>
+<ul>
+<li>p が素数なら φ(p) = p − 1</li>
+<li>p, q が異なる素数なら φ(pq) = (p − 1)(q − 1)</li>
+<li>例: φ(10) = 4（1, 3, 7, 9）、φ(55) = 4·10 = 40</li>
+</ul>
+<p>φ(pq) は p と q を知っていれば一瞬で計算できますが、n = pq だけからは素因数分解なしには求まらないと考えられています。この非対称性が RSA の落とし戸（trapdoor）です。</p>
+<h3 id="定理">定理</h3>
+<p><strong>オイラーの定理.</strong> gcd(a, n) = 1 なら次が成り立つ。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.938em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.938em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">φ</span><span class="mopen mtight">(</span><span class="mord mathnormal mtight">n</span><span class="mclose mtight">)</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≡</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span><span class="mspace allowbreak"></span><span class="mspace" style="margin-right:1em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.3333em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p><strong>フェルマーの小定理.</strong> p が素数で p ∤ a なら a^(p−1) ≡ 1 (mod p)。（オイラーの定理で n = p とした特殊ケース）</p>
+<h3 id="証明のアイデア">証明のアイデア</h3>
+<p>Z_n^* = {r_1, …, r_k}（k = φ(n)）とします。a ∈ Z_n^* を各元に掛けた {a·r_1, …, a·r_k} は、再び Z_n^* の元の並べ替えになります（a に逆元があるので、a·r_i ≡ a·r_j なら r_i ≡ r_j）。すべてを掛け合わせると次の式になります。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8991em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6138em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≡</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace allowbreak"></span><span class="mspace" style="margin-right:1em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.3333em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>右辺の積は逆元を持つので両辺から消せて、a^k ≡ 1 が得られます。§5 で群を学ぶと、これは「元の位数は群の位数を割り切る」というラグランジュの定理の一例だと分かります。</p>
+<h3 id="帰結-指数は-φn-で割った余りで計算できる">帰結: 指数は φ(n) で割った余りで計算できる</h3>
+<p>gcd(a, n) = 1 なら、e ≡ e' (mod φ(n)) のとき a^e ≡ a^e' (mod n) です。例として 3^13 mod 7 は、φ(7) = 6 より 3^13 ≡ 3^1 = 3 です。</p>
+<h3 id="高速冪-square-and-multiply">高速冪: square-and-multiply</h3>
+<p>a^e mod n を e 回の掛け算で計算すると、e が 2048 ビットあれば宇宙の寿命でも終わりません。指数を2進展開し、二乗を繰り返して必要な項だけ掛ければ、掛け算は約 2·log₂ e 回で済みます。</p>
+<p>3^13 mod 7 で確認します。13 = 8 + 4 + 1 です。</p>
+<pre><code>3^1 = 3
+3^2 = 9  ≡ 2
+3^4 = 2^2 ≡ 4
+3^8 = 4^2 = 16 ≡ 2
+3^13 = 3^8 · 3^4 · 3^1 ≡ 2·4·3 = 24 ≡ 3   (mod 7)
+</code></pre>
+<p>上の「φ で一周」の結果と一致します。</p>
+<p>実装上の注意として、この素朴な方法は指数のビットが 1 のときだけ掛け算をするので、処理時間から秘密の指数が漏れます（タイミング攻撃）。実務のライブラリは Montgomery ladder など、ビットに依存しない手順を使います。</p>
+<h3 id="rsa-への接続おもちゃの例">RSA への接続（おもちゃの例）</h3>
+<ol>
+<li>素数 p = 5, q = 11 を選ぶ。n = 55、φ(n) = 40</li>
+<li>gcd(e, 40) = 1 となる e = 7 を公開指数にする</li>
+<li>秘密指数 d = 7⁻¹ mod 40 = 23（§2 で計算済み）</li>
+<li>平文 m = 2 を暗号化: c = 2^7 mod 55 = 128 mod 55 = 18</li>
+<li>復号: 18^23 mod 55 = 2 で元に戻る</li>
+</ol>
+<figure class="widget" data-widget="rsa-flow"></figure>
+
+<p>公開されるのは n と e だけで、d を作るのに必要な φ(n) は p と q を知らないと求まりません。</p>
+<p>戻る理由は、ed = 161 = 4·40 + 1 なので次のようになるからです（gcd(m, n) = 1 の場合）。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8991em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">d</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8991em;"></span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">e</span><span class="mord mathnormal mtight">d</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.938em;"></span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.938em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">4</span><span class="mord mathnormal mtight">φ</span><span class="mopen mtight">(</span><span class="mord mathnormal mtight">n</span><span class="mclose mtight">)</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.188em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.938em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">φ</span><span class="mopen mtight">(</span><span class="mord mathnormal mtight">n</span><span class="mclose mtight">)</span></span></span></span></span></span></span></span></span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">4</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.4637em;"></span><span class="mord mathnormal">m</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≡</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span><span class="mspace allowbreak"></span><span class="mspace" style="margin-right:1em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.3333em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>gcd(m, n) ≠ 1 の場合も復号は正しく戻りますが、その証明には §4 の中国剰余定理を使います。</p>
+<h3 id="余談-素数判定">余談: 素数判定</h3>
+<p>フェルマーの小定理の対偶から、「a^(n−1) ≢ 1 なら n は合成数」と判定できます（フェルマーテスト）。ただし 561 = 3·11·17 のように、互いに素なすべての a でテストをすり抜ける合成数（カーマイケル数）があります。実務では、この穴を塞いだ Miller-Rabin テストを使います。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#power">§3 高速冪とRSA</a>。e を大きくして掛け算の回数を比べ、RSA では p, q, e を変えて d が作れない組み合わせも探してください。</p>
+<h2 id="s4">§4 中国剰余定理</h2>
+<p>法が互いに素なら、「mod n での計算」は「各素因数の mod での計算の組」とまったく同じものとして扱えます。RSA の実装はこれを使って復号を約4倍速くしており、同時にそれが故障攻撃の入口にもなります。</p>
+<h3 id="主張">主張</h3>
+<p><strong>中国剰余定理（CRT）.</strong> n_1, …, n_k が互いに素で N = n_1 ⋯ n_k とする。任意の a_1, …, a_k に対し、連立合同式</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4637em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≡</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace allowbreak"></span><span class="mspace" style="margin-right:1em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.3333em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:1em;"></span><span class="mopen">(</span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>は mod N でただ1つの解を持つ。</p>
+<p>言い換えると、写像 x ↦ (x mod n_1, …, x mod n_k) は Z_N から Z_n1 × ⋯ × Z_nk への全単射で、足し算と掛け算を保ちます（環の同型）。</p>
+<h3 id="構成的な解法">構成的な解法</h3>
+<p>N_i = N / n_i とおき、y_i = N_i⁻¹ mod n_i を §2 の方法で求めます。解は次の式です。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.3277em;vertical-align:-1.2777em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.05em;"><span style="top:-1.8723em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span style="top:-3.05em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.2777em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.109em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.0556em;"></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.0556em;"></span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span></span></div>
+
+<p>N_i y_i は「mod n_i では 1、他の mod n_j では 0」になる部品なので、a_i を掛けて足せば各条件を同時に満たします。一意性は、2つの解の差がすべての n_i で割り切れ、互いに素だから N でも割り切れることから従います。</p>
+<h3 id="例孫子算経の問題">例（『孫子算経』の問題）</h3>
+<p>3 で割ると 2 余り、5 で割ると 3 余り、7 で割ると 2 余る数を求めます。N = 105 です。</p>
+<table>
+<thead>
+<tr>
+<th>i</th>
+<th>n_i</th>
+<th>a_i</th>
+<th>N_i</th>
+<th>y_i = N_i⁻¹ mod n_i</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>3</td>
+<td>2</td>
+<td>35</td>
+<td>2（35 ≡ 2, 2·2 = 4 ≡ 1）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>5</td>
+<td>3</td>
+<td>21</td>
+<td>1（21 ≡ 1）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>7</td>
+<td>2</td>
+<td>15</td>
+<td>1（15 ≡ 1）</td>
+</tr>
+</tbody>
+</table>
+<p>x = 2·35·2 + 3·21·1 + 2·15·1 = 233 ≡ 23 (mod 105) です。23 は確かに 3·7+2、5·4+3、7·3+2 です。</p>
+<h3 id="応用1-rsa-の正しさ一般の-m">応用1: RSA の正しさ（一般の m）</h3>
+<p>gcd(m, n) ≠ 1 でも m^(ed) ≡ m (mod n) になることを示します。CRT より、mod p と mod q で別々に示せば十分です。</p>
+<ul>
+<li>p | m のとき: 両辺とも 0 (mod p)</li>
+<li>p ∤ m のとき: ed = 1 + k(p−1)(q−1) なので、フェルマーより m^(ed) = m·(m^(p−1))^(k(q−1)) ≡ m (mod p)</li>
+</ul>
+<p>q についても同様で、両方成り立つので mod n でも成り立ちます。</p>
+<h3 id="応用2-rsa-crt-による高速化">応用2: RSA-CRT による高速化</h3>
+<p>秘密鍵を持つ側は p, q を知っているので、c^d mod n を直接計算せず、次のように分けます。</p>
+<ol>
+<li>m_p = c^(d mod (p−1)) mod p、m_q = c^(d mod (q−1)) mod q を計算</li>
+<li>CRT で (m_p, m_q) から m を復元</li>
+</ol>
+<p>法と指数がそれぞれ約半分のビット長になり、冪の計算量はおおむねビット長の3乗に比例するため、2回分を合わせても約4倍速くなります。OpenSSL などの実装は標準でこの方式を使います。</p>
+<h3 id="落とし穴-故障攻撃bellcore-攻撃">落とし穴: 故障攻撃（Bellcore 攻撃）</h3>
+<p>RSA-CRT で署名 s を作るとき、ハードウェアの誤動作で m_q 側だけが間違ったとします。すると s^e ≡ m は mod p では成り立ち、mod q では成り立ちません。このとき次の式で p が求まり、秘密鍵が漏れます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop"><span style="margin-right:0.01389em;">g</span>cd</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7144em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">e</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">m</span><span class="mspace" style="margin-right:0.0556em;"></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin"><span class="mord"><span class="mord mathrm">mod</span></span></span><span class="mspace" style="margin-right:0.0556em;"></span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">n</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>対策は、署名を出力する前に s^e ≡ m を検証することです。「数学的に正しい最適化が、実装の世界では攻撃面になる」典型例で、Step 7 のサイドチャネルの話につながります。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#crt">§4 中国剰余定理</a>。n₁ = 3、n₂ = 5 と n₁ = 4、n₂ = 6 を並べると、互いに素の意味が一目で分かります。</p>
+<h2 id="s5">§5 群・環・体と有限体</h2>
+<p>ここまでの計算から「演算の規則」だけを抜き出したものが群・環・体です。抽象化しておくと、Z_p^* の Diffie-Hellman と楕円曲線の ECDH が「同じ議論の別の群」だと一目で分かるようになり、AES の内部計算も同じ言葉で読めます。</p>
+<h3 id="群">群</h3>
+<p>集合 G と二項演算 · の組が次の4つを満たすとき、群といいます。</p>
+<ol>
+<li>閉包性: a, b ∈ G なら a·b ∈ G</li>
+<li>結合律: (a·b)·c = a·(b·c)</li>
+<li>単位元: すべての a で e·a = a·e = a となる e がある</li>
+<li>逆元: 各 a に a·a⁻¹ = e となる a⁻¹ がある</li>
+</ol>
+<p>さらに a·b = b·a なら可換群（アーベル群）です。暗号で使う群はほぼすべて可換です。</p>
+<table>
+<thead>
+<tr>
+<th>群</th>
+<th>演算</th>
+<th>単位元</th>
+<th>位数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Z_n</td>
+<td>足し算 mod n</td>
+<td>0</td>
+<td>n</td>
+</tr>
+<tr>
+<td>Z_n^*</td>
+<td>掛け算 mod n</td>
+<td>1</td>
+<td>φ(n)</td>
+</tr>
+<tr>
+<td>楕円曲線上の点 E(F_p)</td>
+<td>点の加算</td>
+<td>無限遠点 O</td>
+<td>約 p（ハッセの定理）</td>
+</tr>
+</tbody>
+</table>
+<p>群の元の個数を群の位数 |G| といいます。</p>
+<h3 id="元の位数と巡回群">元の位数と巡回群</h3>
+<p>g ∈ G について、g^k = e となる最小の正の k を g の位数といいます。g の冪全体 ⟨g⟩ = {g, g^2, …, e} は部分群をつくり、⟨g⟩ = G となる g があれば G を巡回群、g を生成元と呼びます。</p>
+<p>Z_7^* で確かめます。</p>
+<pre><code>3 の冪: 3, 2, 6, 4, 5, 1   → 位数 6、生成元
+2 の冪: 2, 4, 1            → 位数 3
+6 の冪: 6, 1               → 位数 2
+</code></pre>
+<p><strong>ラグランジュの定理.</strong> 有限群 G の部分群 H について、|H| は |G| を割り切る。</p>
+<p>とくに元の位数は |G| を割り切るので g^|G| = e です。§3 のオイラーの定理は、G = Z_n^*、|G| = φ(n) としたこの定理そのものです。上の例でも位数 1, 2, 3, 6 はすべて 6 の約数になっています。</p>
+<figure class="widget" data-widget="z7-subgroups"></figure>
+
+<p>部分群は生成元の選び方で決まり、3 と 5 は群全体を、2 と 4 は位数 3 の部分群を生成します。</p>
+<h3 id="離散対数問題と群の選び方">離散対数問題と群の選び方</h3>
+<p>巡回群 ⟨g⟩ で、h = g^x から x を求める問題を離散対数問題（DLP）といいます。g^x の計算は §3 の高速冪で一瞬ですが、逆向きは一般に難しいと考えられています。これが Diffie-Hellman の根拠です。</p>
+<p>ただし群の位数が小さな素因数に分解できると、Pohlig-Hellman 法により各素因数ごとの小さな DLP に分解して解かれてしまいます。このため実務では、位数が大きな素数 q の部分群を使います。どんな群でも一般には約 √q 回の計算で解けるため（baby-step giant-step、Pollard の ρ 法）、128 ビット安全性には q を約 256 ビットにします。楕円曲線の鍵が 256 ビットなのはこのためです。</p>
+<h3 id="環と体">環と体</h3>
+<ul>
+<li>環: 足し算で可換群になり、掛け算が結合的で分配律を満たすもの。例: 整数 Z、Z_n、多項式全体</li>
+<li>体: 環のうち、0 以外のすべての元が掛け算の逆元を持つもの。例: 有理数 Q、実数 R</li>
+</ul>
+<p>§2 の結果から、Z_n が体になるのは n が素数のときだけです。素数 p について Z_p を有限体 GF(p)（または F_p）と書きます。</p>
+<h3 id="有限体-gf28">有限体 GF(2^8)</h3>
+<p>有限体の元の個数は必ず素数の冪 p^m になり、各 p^m について本質的にただ1つ存在します。p = 2, m = 8 の GF(2^8) は、1バイトをそのまま1つの元として扱える体で、AES の中核です。</p>
+<p>元は、係数が 0 か 1 の7次以下の多項式で、8ビットに対応させます。</p>
+<pre><code>0x57 = 0101 0111 ↔ x^6 + x^4 + x^2 + x + 1
+</code></pre>
+<ul>
+<li>足し算: 係数ごとに mod 2、つまりビットごとの XOR。0x57 + 0x83 = 0xD4。引き算も XOR で同じ</li>
+<li>掛け算: 多項式として掛けたあと、既約多項式 m(x) = x^8 + x^4 + x^3 + x + 1（0x11B）で割った余りを取る</li>
+</ul>
+<p>m(x) は「これ以上因数分解できない多項式」で、素数の役割を果たします。だから 0 以外のすべての元に逆元があり、体になります。</p>
+<h3 id="掛け算の実装-xtime">掛け算の実装: xtime</h3>
+<p>x を掛ける操作（xtime）は、左シフトして、最上位ビットがあふれたら 0x1B を XOR するだけです（x^8 ≡ x^4 + x^3 + x + 1 なので）。任意の掛け算は、§3 の square-and-multiply と同じ発想で xtime と XOR の組み合わせで計算できます。</p>
+<p>FIPS 197 の例では 0x57 · 0x83 = 0xC1 です。演習で実装して確かめてください。</p>
+<p>AES の S-box は、GF(2^8) での逆元（0 は 0 に写す）に、ビット単位のアフィン変換を合成したものです。逆元写像は代数的に非線形性が強いため、差分解読と線形解読に強くなります。この話は Step 3 で再び出てきます。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#group">§5 巡回群</a>。p = 13 で各元をクリックし、位数が 12 の約数だけになることを確かめてください。</p>
+<h2 id="s6">§6 確率: 誕生日のパラドックス</h2>
+<p>N 通りの値からランダムに選ぶと、約 √N 個で衝突が起きる確率が 50% 前後になります。n ビットのハッシュの衝突耐性が n/2 ビットしかないこと、ランダムなノンスや IV に使える回数に上限があることは、すべてこの一つの計算から来ます。</p>
+<h3 id="問題">問題</h3>
+<p>N 通りの値から独立に一様に q 個選ぶとき、少なくとも1組が一致する確率 P(N, q) を求めます。</p>
+<h3 id="計算">計算</h3>
+<p>すべて異なる確率は、2個目が1個目と異なり、3個目が前の2個と異なり、と順に掛けていけば得られます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord text"><span class="mord cjk_fallback">衝突なし</span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:3.1259em;vertical-align:-1.2777em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.8482em;"><span style="top:-1.8723em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.05em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∏</span></span></span><span style="top:-4.3471em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">q</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.2777em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3365em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></div>
+
+<p>x が小さいとき 1 − x ≈ e^(−x) なので、次の近似が成り立ちます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:2.4em;vertical-align:-0.95em;"></span><span class="mop">exp</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord">−</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></div>
+
+<p>P = 1/2 を解くと q ≈ 1.18√N です。N = 365 なら q ≈ 22.5 で、「23人いれば誕生日が同じ2人がいる確率は50%を超える」という有名な結果になります。直感（365の半分くらい）とずれるのは、比較される「組」の数が q^2/2 で増えるからです。</p>
+<h3 id="上からの評価union-bound">上からの評価（union bound）</h3>
+<p>証明では、近似より次の上界のほうがよく使われます。どの1組が一致する確率も 1/N で、組は q(q−1)/2 個あるので、和事象の確率は各確率の和以下という union bound から次が得られます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.113em;vertical-align:-0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.1771em;vertical-align:-0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.4911em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></div>
+
+<p>この形は Step 3 の PRF/PRP スイッチング補題などに何度も登場します。</p>
+<h3 id="暗号への帰結">暗号への帰結</h3>
+<table>
+<thead>
+<tr>
+<th>対象</th>
+<th>値の空間 N</th>
+<th>衝突が現実的になる個数</th>
+<th>実務上の帰結</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>n ビットのハッシュ</td>
+<td>2^n</td>
+<td>約 2^(n/2)</td>
+<td>SHA-256 の衝突耐性は128ビット。MD5（128ビット）は64ビットしかなく、実際に破られた</td>
+</tr>
+<tr>
+<td>64ビットブロック暗号の CBC</td>
+<td>2^64</td>
+<td>約 2^32 ブロック（約32GB）</td>
+<td>3DES や Blowfish の Sweet32 攻撃。同一鍵での暗号化量を制限する必要がある</td>
+</tr>
+<tr>
+<td>AES-GCM のランダム96ビットノンス</td>
+<td>2^96</td>
+<td>約 2^48</td>
+<td>NIST は衝突確率を十分小さく保つため、同一鍵でのランダムノンス使用を 2^32 回までと定めている</td>
+</tr>
+</tbody>
+</table>
+<p>衝突耐性を求める用途では、出力長を必要な安全性の2倍にする、と覚えておけば十分です。</p>
+<h3 id="実装で確かめる">実装で確かめる</h3>
+<p>SHA-256 の出力を先頭32ビットに切り詰めた関数を作り、ランダムな入力を入れ続けます。辞書に出力を記録して、2回目に同じ値が出たら衝突です。平均で約 2^16 = 65,536 回前後で見つかるはずです（演習問題 16）。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#birthday">§6 誕生日攻撃</a>。演習問題 16 をブラウザ上で再現できます。ビット数を 2 ずつ増やして、衝突までの回数が約2倍になるのを見てください。</p>
+<h2 id="s7">§7 計算量: 多項式時間と無視できる関数</h2>
+<p>現代暗号の「安全」は、「効率的な攻撃者には、無視できる確率でしか破れない」という意味です。この節では「効率的」と「無視できる」を数学の言葉にし、次回の安全性定義の準備をします。</p>
+<h3 id="セキュリティパラメータ">セキュリティパラメータ</h3>
+<p>鍵長などの大きさを表す整数 n（λ と書く本もあります）をセキュリティパラメータと呼びます。暗号方式の正規の利用者の計算は n の多項式時間で終わり、攻撃者の成功確率は n が大きくなると急速に 0 に近づく、という形で安全性を表します。</p>
+<h3 id="効率的な攻撃者-ppt">効率的な攻撃者: PPT</h3>
+<ul>
+<li>多項式時間: 実行時間が n^c（c は定数）以下で抑えられること</li>
+<li>確率的多項式時間（PPT）: 乱数を使ってよい多項式時間アルゴリズム。攻撃者はこれでモデル化する</li>
+</ul>
+<p>乱数を許すのは、現実の攻撃者もランダムな推測を使うからです。逆に「指数時間の総当たり」は効率的ではないとみなします。</p>
+<h3 id="無視できる関数">無視できる関数</h3>
+<p><strong>定義.</strong> 関数 f: N → [0, 1] が無視できる（negligible）とは、任意の多項式 p に対して、ある N が存在し、n &gt; N のすべてで f(n) &lt; 1/p(n) となることをいう。</p>
+<p>言い換えると、「どんな多項式の逆数よりも、いずれ小さくなる」関数です。</p>
+<table>
+<thead>
+<tr>
+<th>関数</th>
+<th>無視できるか</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2^(−n)</td>
+<td>はい</td>
+<td>指数関数はどの多項式よりも速く増える</td>
+</tr>
+<tr>
+<td>2^(−√n)</td>
+<td>はい</td>
+<td>指数が √n でも、どの多項式よりも速く増える</td>
+</tr>
+<tr>
+<td>n^(−log n)</td>
+<td>はい</td>
+<td>分母の次数が n とともに増え続ける</td>
+</tr>
+<tr>
+<td>1/n^10</td>
+<td>いいえ</td>
+<td>p(n) = n^11 に対して条件を満たさない</td>
+</tr>
+<tr>
+<td>1/2</td>
+<td>いいえ</td>
+<td>定数は無視できない</td>
+</tr>
+</tbody>
+</table>
+<h3 id="なぜこの定義なのか-閉包性">なぜこの定義なのか: 閉包性</h3>
+<p>無視できる関数には次の性質があります。</p>
+<ul>
+<li>f, g が無視できるなら f + g も無視できる</li>
+<li>f が無視できて p が多項式なら p(n)·f(n) も無視できる</li>
+</ul>
+<p>2つ目が重要です。成功確率 ε(n) の攻撃を PPT の攻撃者が多項式回くり返しても、成功確率は高々 p(n)·ε(n) で、やはり無視できます。つまり「多項式回の試行」と「無視できる確率」は互いに打ち消し合わない組み合わせとして設計されています。もし 1/n^10 を許すと、n^10 回くり返せば成功してしまいます。</p>
+<h3 id="最悪時の困難性と平均的な困難性">最悪時の困難性と平均的な困難性</h3>
+<p>「NP 困難な問題を使えば安全」とは言えません。NP 困難は「最悪の入力では難しい」という意味で、暗号が必要とするのは「鍵をランダムに選んだとき、ほとんどの場合に難しい」ことです。実際、NP 困難な問題に基づいた初期のナップサック暗号は、使われる入力が易しい部分に偏っていたため破られました。</p>
+<p>このため暗号は、素因数分解、離散対数、格子問題（LWE）のように、ランダムな例でも難しいと信じられている問題を仮定として使います。</p>
+<h3 id="漸近的安全性と具体的安全性">漸近的安全性と具体的安全性</h3>
+<p>上の定義は n → ∞ の振る舞いだけを見る漸近的な安全性です。実務では「時間 t の攻撃者の成功確率が ε 以下」という具体的な数で語り、t/ε が 2^128 以上なら「128ビット安全」と呼ぶのが一般的です。</p>
+<table>
+<thead>
+<tr>
+<th>128ビット安全に必要な大きさ</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AES-128 の鍵</td>
+<td>総当たりが最良の一般攻撃</td>
+</tr>
+<tr>
+<td>楕円曲線 256ビット</td>
+<td>§5 の √q 攻撃</td>
+</tr>
+<tr>
+<td>RSA・有限体 DH 3072ビット</td>
+<td>数体ふるい法が準指数時間で動くため、大きく取る必要がある</td>
+</tr>
+<tr>
+<td>SHA-256（衝突耐性）</td>
+<td>§6 の誕生日攻撃</td>
+</tr>
+</tbody>
+</table>
+<p>同じ「128ビット安全」でも鍵長がばらばらなのは、それぞれの最良攻撃の計算量が違うからです。対応表は NIST SP 800-57 Part 1 にまとまっています。</p>
+<p><strong>ラボで試す:</strong> <a href="../labs/01-lab.html#negl">§7 無視できる関数</a>。次数 k を最大まで上げても、2^(−√n) がいずれ 1/n^k を追い抜くことを確かめてください。</p>
+<h2 id="演習問題">演習問題</h2>
+<p>手計算（A）は講義直後に15分、証明（B）と実装（C）は次回までの宿題を想定しています。A は電卓なし、C は Python 3 の標準ライブラリだけで解けます。</p>
+<h3 id="a-手計算">A. 手計算</h3>
+<ol>
+<li>gcd(1071, 462) を互除法で求めよ</li>
+<li>拡張ユークリッドの互除法で 17⁻¹ mod 43 を求め、検算せよ</li>
+<li>5^100 mod 13 を求めよ（ヒント: φ(13) を使う）</li>
+<li>x ≡ 1 (mod 4) かつ x ≡ 2 (mod 9) を満たす x を mod 36 で求めよ</li>
+<li>p = 7, q = 13, e = 5 の RSA で、秘密指数 d を求め、平文 m = 10 を暗号化せよ</li>
+<li>Z_11^* で 2 と 3 の位数を求めよ。2 は生成元か。Z_11^* の部分群の位数として可能なものをすべて挙げよ</li>
+<li>出力40ビットのハッシュで、衝突が約50%の確率で見つかる入力数はおよそいくつか</li>
+</ol>
+<h3 id="b-証明判定">B. 証明・判定</h3>
+<ol start="8">
+<li>p を素数とする。x^2 ≡ 1 (mod p) なら x ≡ ±1 (mod p) であることを示せ。合成数 n では成り立たない例も1つ挙げよ</li>
+<li>f が無視できる関数で p が多項式なら、p(n)·f(n) も無視できることを示せ</li>
+<li>次の関数が無視できるか判定せよ: (a) n^(−100) (b) 2^(−log₂ n) (c) 2^(−(log₂ n)^2) (d) 1/n!</li>
+<li>素数 p の乗法群 Z_p^* で、ある元の位数が q（素数）なら、q は p − 1 を割り切ることを示せ</li>
+</ol>
+<h3 id="c-実装python">C. 実装（Python）</h3>
+<ol start="12">
+<li>egcd と inv を自作し、問題2の答えと pow(17, -1, 43) が一致することを確かめよ</li>
+<li>square-and-multiply で modpow(a, e, n) を実装し、組み込みの pow(a, e, n) と10万個のランダムな入力で照合せよ</li>
+<li>GF(2^8) の掛け算 gmul(a, b) を xtime を使って実装し、gmul(0x57, 0x83) == 0xC1 を確かめよ。さらに 0 以外の全元について逆元を総当たりで求め、すべて存在することを確かめよ</li>
+<li>フェルマーテストと Miller-Rabin を実装し、561、1105、1729（いずれもカーマイケル数）で両者の判定が分かれることを確かめよ</li>
+<li>SHA-256 の先頭32ビットだけを使うハッシュで衝突を探す実験を10回行い、平均の試行回数が 2^16 の何倍程度になるか記録せよ</li>
+</ol>
+<h2 id="解答と解説">解答と解説</h2>
+<h3 id="a-手計算_1">A. 手計算</h3>
+<ol>
+<li>1071 = 2·462 + 147、462 = 3·147 + 21、147 = 7·21 + 0 より gcd = 21</li>
+<li>43 = 2·17 + 9、17 = 1·9 + 8、9 = 1·8 + 1。逆にたどると 1 = 9 − 8 = 2·9 − 17 = 2·43 − 5·17。よって 17⁻¹ ≡ −5 ≡ 38。検算: 17·38 = 646 = 15·43 + 1</li>
+<li>φ(13) = 12、100 = 8·12 + 4 なので 5^100 ≡ 5^4。5^2 = 25 ≡ −1 より 5^4 ≡ 1。答えは 1</li>
+<li>mod 9 で 2 になる数 2, 11, 20, 29 のうち、mod 4 で 1 になるのは 29。答えは x ≡ 29 (mod 36)</li>
+<li>n = 91、φ(n) = 72。5d ≡ 1 (mod 72) より d = 29（5·29 = 145 = 2·72 + 1）。暗号化は 10^2 = 100 ≡ 9、10^4 ≡ 81、10^5 ≡ 810 ≡ 82 なので c = 82。復号 82^29 mod 91 = 10 になることは問題13のコードで確かめてください</li>
+<li>2 の冪は 2, 4, 8, 5, 10, 9, 7, 3, 6, 1 で位数10、生成元。3 の冪は 3, 9, 5, 4, 1 で位数5。部分群の位数は |Z_11^*| = 10 の約数の 1, 2, 5, 10</li>
+<li>1.18 × 2^20 ≈ 約124万個</li>
+</ol>
+<h3 id="b-証明判定_1">B. 証明・判定</h3>
+<ol start="8">
+<li>x^2 ≡ 1 なら p | (x − 1)(x + 1)。p は素数なので p | (x − 1) または p | (x + 1)。反例は n = 8 で x = 3（9 ≡ 1 だが 3 ≢ ±1）。Miller-Rabin は「1 の自明でない平方根」を見つけたら合成数と判定する方法で、この性質をそのまま使っています</li>
+<li>任意の多項式 q をとる。p(n)·q(n) も多項式なので、f の定義から十分大きな n で f(n) &lt; 1/(p(n)q(n))。両辺に p(n) を掛けて p(n)f(n) &lt; 1/q(n)。（p は十分大きな n で正とする）</li>
+<li>(a) いいえ。多項式の逆数そのもの (b) いいえ。2^(−log₂ n) = 1/n (c) はい。2^(−(log₂ n)^2) = n^(−log₂ n) で、分母の次数が増え続ける (d) はい。n! は 2^n より速く増える</li>
+<li>元の位数は、その元が生成する部分群の位数に等しい。ラグランジュの定理よりそれは |Z_p^*| = p − 1 を割り切る</li>
+</ol>
+<h3 id="c-実装のポイント">C. 実装のポイント</h3>
+<ul>
+<li>問題13: 照合は random.getrandbits で 256〜2048 ビットの値を作ると、実務に近いサイズで確かめられます</li>
+<li>問題14: 逆元の総当たりは 255 × 255 回の掛け算で済みます。ここで作った gmul は Step 3 の AES 実装でそのまま使います</li>
+<li>問題15: フェルマーテストは 561 を「たぶん素数」と判定し、Miller-Rabin は合成数と見抜きます。底を固定せず乱数で選ぶのがコツです</li>
+<li>問題16: 平均は理論上 √(πN/2) ≈ 1.25 × 2^16 ≈ 約8.2万回です。1.18√N は「50%になる個数」で、平均とは少し違う点に注意してください</li>
+</ul>
+<h3 id="次回予告-第2回-暗号の形式的基礎">次回予告: 第2回 暗号の形式的基礎</h3>
+<p>今回の「PPT」と「無視できる関数」を使って、「暗号が安全である」ことを攻撃者とのゲームとして定義します。ワンタイムパッドの完全秘匿性、IND-CPA、疑似乱数生成器、そして帰着による証明を扱います。予習として Katz &amp; Lindell の完全秘匿性の章、または The Joy of Cryptography の最初の2章を読んでおいてください。</p>
+<aside class="related"><h2>この回の補足ノート</h2><ul><li><a href="../notes/extended-euclid.html">拡張ユークリッドの互除法を直感で掴む</a></li><li><a href="../notes/gcd-invariance.html">gcd(a, b) = gcd(b, r) はなぜ成り立つか</a></li></ul></aside>
+<nav class="pager" aria-label="前後の回"><span></span><a class="pager-next" href="02-formal-foundations.html"><small>次の回</small>第2回 暗号の形式的基礎</a></nav>
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第3回 共通鍵暗号 | Cipher Elements</title>
+<meta name="description" content="ブロック暗号を PRP（疑似ランダム置換）として扱い、その上に運用モードを載せて IND-CPA を示す、という流れを押さえるのがこの Step の中心です。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-lecture">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">Step 3 · 5〜6週<span class="chip chip-planned">準備中</span></div>
+<h1>第3回 共通鍵暗号</h1>
+<p class="doc-lead">ブロック暗号を PRP（疑似ランダム置換）として扱い、その上に運用モードを載せて IND-CPA を示す、という流れを押さえるのがこの Step の中心です。</p>
+</header>
+
+<article class="prose">
+<div class="notice">この回の講義資料は準備中です。下は学習ガイドから抜き出したシラバスで、講義資料が公開されるとこのページが置き換わります。</div>
+
+<p>AES の内部は「理解して一度実装する」までやり、運用では必ずライブラリを使います。</p>
+<h3 id="学ぶこと">学ぶこと</h3>
+<ul>
+<li>PRF と PRP: 鍵付き関数と鍵付き置換。PRF/PRP スイッチング補題により、q 回のクエリで区別できる確率は約 q^2 / 2^(n+1) になる。この式が「1つの鍵で暗号化してよい量の上限」の根拠になる</li>
+<li>ブロック暗号の構造: SPN（AES）と Feistel（DES）。Feistel は段数が足りれば PRP になる（Luby-Rackoff）</li>
+<li>AES の4操作: SubBytes、ShiftRows、MixColumns、AddRoundKey。鍵長128/192/256bit でラウンド数は10/12/14。S-box は GF(2^8) の逆元に基づく</li>
+<li>解読法の考え方: 差分解読と線形解読。AES の wide trail 戦略は、これらの攻撃が成り立ちにくいように拡散層を設計する発想</li>
+<li>運用モード: ECB（使ってはいけない）、CBC（IV は予測不能なランダム）、CTR（ノンスは一意）、XTS（ストレージ向け）。CBC と CTR は IND-CPA 安全だが、改ざんには無力（CCA 安全ではない）</li>
+<li>ストリーム暗号: ChaCha20（ARX 構造）。RC4 は出力の偏りで破られた</li>
+<li>64bit ブロックの限界: 3DES は誕生日攻撃（Sweet32）で実用上の脆弱性が出るため廃止方向</li>
+</ul>
+<h3 id="読む">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: 共通鍵暗号の実用的構成の章、運用モードの節</li>
+<li>Boneh &amp; Shoup, A Graduate Course in Applied Cryptography（無料）: ブロック暗号、CPA 安全な暗号化の章</li>
+<li>Daemen &amp; Rijmen, The Design of Rijndael: AES 設計者による解説。拡散層の考え方に絞って読めば十分</li>
+<li>一次資料: FIPS 197（AES）、NIST SP 800-38A（運用モード）、RFC 8439（ChaCha20）</li>
+<li>日本語: 結城浩『暗号技術入門 第3版』で全体像を再確認</li>
+</ul>
+<h3 id="手を動かす">手を動かす</h3>
+<ol>
+<li>AES-128 を一から実装し、FIPS 197 付録のテストベクタで検証する（Python で十分。余力があれば Rust でも）</li>
+<li>CBC、CTR を自分で実装する（ブロック暗号は上の AES を使う）</li>
+<li>Cryptopals: ECB の byte-at-a-time 復号（Set 2）と CBC のビット反転攻撃（Set 2）</li>
+<li>ChaCha20 のクォーターラウンドを実装し、RFC 8439 のテストベクタで確認する</li>
+</ol>
+<h3 id="到達チェック">到達チェック</h3>
+<ul>
+<li>ECB が IND-CPA を満たさない理由と、CBC で IV が予測可能だと破れる理由（BEAST の原理）を説明できる</li>
+<li>CTR でノンスを再利用すると何が漏れるかを式で書ける</li>
+<li>同一鍵で安全に暗号化できる量が、ブロック長 n に対して約 2^(n/2) ブロックで頭打ちになる理由を説明できる</li>
+<li>「暗号化したのに改ざんされる」問題を、CBC のビット反転で具体的に示せる</li>
+</ul>
+
+<nav class="pager" aria-label="前後の回"><a class="pager-prev" href="02-formal-foundations.html"><small>前の回</small>第2回 暗号の形式的基礎</a><a class="pager-next" href="04-hash-mac-aead.html"><small>次の回</small>第4回 ハッシュ・MAC・AEAD</a></nav>
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>

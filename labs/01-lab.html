@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<title>暗号数学ラボ 第1回 | Cipher Elements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 1カラムの実験ノート。上部に節タブ、各節は「操作 → 可視化 → 読み方」の順で縦に積む */
+:root{
+  --bg:#f4f5f9; --panel:#ffffff; --ink:#1a1f33; --muted:#596178; --line:#d7dbe8; --grid:#e8eaf2;
+  --accent:#3343b5; --accent-soft:#e5e8fa; --on-accent:#ffffff;
+  --hot:#bf5418; --hot-soft:#fbe9dd; --good:#2c7a4c;
+  --display:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131c; --panel:#1a1d2a; --ink:#e6e8f2; --muted:#9ba2b8; --line:#2f3448; --grid:#242838;
+  --accent:#8e9aff; --accent-soft:#262b52; --on-accent:#11131c;
+  --hot:#f29159; --hot-soft:#3b281d; --good:#6cc595; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#11131c; --panel:#1a1d2a; --ink:#e6e8f2; --muted:#9ba2b8; --line:#2f3448; --grid:#242838;
+  --accent:#8e9aff; --accent-soft:#262b52; --on-accent:#11131c;
+  --hot:#f29159; --hot-soft:#3b281d; --good:#6cc595; color-scheme:dark;}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7;}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,5vw,38px);line-height:1.25;margin:0;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+nav{display:flex;flex-wrap:wrap;gap:6px}
+nav button{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+nav button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+section.view{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:16px}
+section.view h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0;text-wrap:balance}
+.sec{font-family:var(--mono);color:var(--muted);font-size:13px;margin-right:8px}
+.lead{margin:0;color:var(--muted);max-width:65ch}
+.controls{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
+.controls label{display:grid;gap:2px;font-size:12.5px;color:var(--muted)}
+input[type=number],input[type=text],select{font-family:var(--mono);font-size:15px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:7.5em}
+input.wide{width:12em}
+input[type=range]{width:180px;accent-color:var(--accent)}
+.btn{font:inherit;font-size:14px;padding:7px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.split{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:640px){.split{grid-template-columns:minmax(0,1fr)}}
+svg.fig{width:100%;max-width:340px;height:auto;display:block;margin:0 auto}
+svg.figwide{width:100%;height:auto;display:block}
+.sq{transform-box:fill-box;transform-origin:center;fill-opacity:.24;stroke-width:1.5}
+.sq.c0{fill:var(--accent);stroke:var(--accent)} .sq.c1{fill:var(--hot);stroke:var(--hot)} .sq.c2{fill:var(--good);stroke:var(--good)} .sq.c3{fill:var(--muted);stroke:var(--muted)}
+.sq.fresh{animation:pop .5s ease-out}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+.out{font-family:var(--mono);font-size:14px;line-height:1.8;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0;overflow-x:auto}
+.out b{color:var(--hot)}
+.note{font-size:13.5px;color:var(--muted);margin:0;max-width:65ch}
+.warn{color:var(--hot)}
+.ok{color:var(--good)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-family:var(--mono);font-size:13.5px;font-variant-numeric:tabular-nums;min-width:100%}
+th,td{border-bottom:1px solid var(--grid);padding:5px 10px;text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-family:var(--body);font-size:12.5px}
+tr.new td{background:var(--accent-soft)}
+tr.fin td{background:var(--hot-soft)}
+td.l,th.l{text-align:left}
+canvas{width:100%;display:block}
+.grid{display:grid;gap:3px;font-family:var(--mono);font-size:12px}
+.grid div{border-radius:4px;padding:4px 2px;text-align:center;min-height:30px;display:flex;align-items:center;justify-content:center}
+.grid .h{color:var(--muted);font-weight:600}
+.grid .c{background:var(--bg);border:1px solid var(--line);cursor:pointer;color:var(--ink)}
+.grid .c.empty{background:repeating-linear-gradient(45deg,transparent 0 4px,var(--grid) 4px 8px);cursor:default}
+.grid .c.multi{border-color:var(--hot);color:var(--hot)}
+.grid .c.sel{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:4px 8px;cursor:pointer;display:inline-flex;gap:6px;align-items:baseline}
+.chip small{font-size:11px;color:var(--muted)}
+.chip.gen{border-color:var(--accent)}
+.chip.sel{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.chip.sel small{color:var(--on-accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+footer{color:var(--muted);font-size:12.5px}
+a.back{color:inherit;text-decoration:none;border-bottom:1px solid currentColor}
+a.back:hover{color:var(--hot)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a class="back" href="../index.html">Cipher Elements</a> · <a class="back" href="../lectures/01-math-foundations.html">第1回 数学的基盤</a> · 付属ラボ</div>
+    <h1>数を動かして確かめる、暗号の数学</h1>
+    <p><a class="back" href="../lectures/01-math-foundations.html">講義資料</a>の §1〜§7 に対応した実験台です。数字を変えると、その場で図と計算が更新されます。資料を読みながら、気になった例をここで試してください。</p>
+  </header>
+
+  <nav role="tablist" aria-label="節">
+    <button role="tab" id="t-clock" data-v="clock">§1 時計算術</button>
+    <button role="tab" id="t-euclid" data-v="euclid">§2 拡張互除法</button>
+    <button role="tab" id="t-power" data-v="power">§3 高速冪とRSA</button>
+    <button role="tab" id="t-crt" data-v="crt">§4 中国剰余定理</button>
+    <button role="tab" id="t-group" data-v="group">§5 巡回群</button>
+    <button role="tab" id="t-birthday" data-v="birthday">§6 誕生日攻撃</button>
+    <button role="tab" id="t-negl" data-v="negl">§7 無視できる関数</button>
+  </nav>
+
+  <!-- §1 -->
+  <section class="view" id="v-clock" role="tabpanel" aria-labelledby="t-clock">
+    <h2><span class="sec">§1</span>合同式は、時計の上の算術</h2>
+    <p class="lead">n 個の目盛りを持つ時計に数を置くと、大きな数も負の数も、どれかの目盛りに落ちます。足し算・引き算・掛け算は、先に余りを取ってから計算しても結果が同じになることを確かめてください。</p>
+    <div class="controls">
+      <label for="ck-n">法 n = <span id="ck-nv">12</span><input type="range" id="ck-n" min="2" max="24" value="12"></label>
+      <label for="ck-a">a<input type="number" id="ck-a" value="17"></label>
+      <label for="ck-op">演算<select id="ck-op"><option value="+">+</option><option value="-">−</option><option value="*">×</option></select></label>
+      <label for="ck-b">b<input type="number" id="ck-b" value="9"></label>
+    </div>
+    <div class="split">
+      <svg class="fig" id="ck-svg" viewBox="0 0 340 340" role="img" aria-label="法 n の時計と計算結果"></svg>
+      <div style="display:grid;gap:12px;min-width:0">
+        <div class="out" id="ck-out"></div>
+        <p class="note">青い目盛りが a、青枠が b、橙の針が計算結果です。a に負の数を入れると、Java の <code>%</code> と <code>Math.floorMod</code> の違いが表示されます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- §2 -->
+  <section class="view" id="v-euclid" role="tabpanel" aria-labelledby="t-euclid" hidden>
+    <h2><span class="sec">§2</span>拡張互除法を1行ずつ進める</h2>
+    <p class="lead">各行は「r = s·n + t·a」を満たしたまま、r を小さくしていきます。r が gcd に達した行の t が、a の逆元の候補です。</p>
+    <div class="controls">
+      <label for="eu-a">a（逆元を求める数）<input type="text" id="eu-a" class="wide" value="7" inputmode="numeric"></label>
+      <label for="eu-n">法 n<input type="text" id="eu-n" class="wide" value="40" inputmode="numeric"></label>
+      <button class="btn" id="eu-step">1行進める</button>
+      <button class="btn ghost" id="eu-all">最後まで</button>
+      <button class="btn ghost" id="eu-reset">最初から</button>
+      <button class="btn ghost" id="eu-play">自動再生</button>
+    </div>
+    <div style="display:grid;gap:6px">
+      <svg class="figwide" id="eu-svg" viewBox="0 0 680 248" role="img" aria-label="長方形を正方形で切り取る図"></svg>
+      <p class="note" id="eu-cap"></p>
+    </div>
+    <div class="tbl"><table><thead><tr><th>行</th><th>商 q</th><th>余り r</th><th>s</th><th>t</th><th class="l">不変式 r = s·n + t·a</th></tr></thead><tbody id="eu-body"></tbody></table></div>
+    <div class="out" id="eu-out"></div>
+    <p class="note">試してみたい入力: (17, 43)、(6, 10)（逆元なし）、(65537, 3120)。r は2行ごとに少なくとも半分になるので、桁数の大きな数でも行数はあまり増えません。</p>
+  </section>
+
+  <!-- §3 -->
+  <section class="view" id="v-power" role="tabpanel" aria-labelledby="t-power" hidden>
+    <h2><span class="sec">§3</span>square-and-multiply と、おもちゃの RSA</h2>
+    <p class="lead">指数を2進数で上の桁から読み、毎回2乗し、ビットが 1 のときだけ a を掛けます。掛け算の回数が、素朴な方法の e − 1 回からどれだけ減るかに注目してください。</p>
+    <div class="controls">
+      <label for="pw-a">a<input type="text" id="pw-a" value="3" inputmode="numeric"></label>
+      <label for="pw-e">指数 e<input type="text" id="pw-e" class="wide" value="13" inputmode="numeric"></label>
+      <label for="pw-n">法 n<input type="text" id="pw-n" value="7" inputmode="numeric"></label>
+    </div>
+    <div class="tbl"><table><thead><tr><th>ビット</th><th class="l">操作</th><th>途中の値</th></tr></thead><tbody id="pw-body"></tbody></table></div>
+    <div class="out" id="pw-out"></div>
+    <p class="note">ビットが 1 の行だけ処理が1回多いので、処理時間を測ると指数のビットが漏れます。秘密の指数を扱う実装が、ビットに依存しない手順を使う理由です。</p>
+
+    <h2 style="margin-top:8px"><span class="sec">RSA</span>鍵を作って、暗号化して、戻す</h2>
+    <div class="controls">
+      <label for="rsa-p">素数 p<select id="rsa-p"></select></label>
+      <label for="rsa-q">素数 q<select id="rsa-q"></select></label>
+      <label for="rsa-e">公開指数 e<input type="number" id="rsa-e" value="7" min="3"></label>
+      <label for="rsa-m">平文 m<input type="number" id="rsa-m" value="2" min="0"></label>
+    </div>
+    <div class="split">
+      <svg class="fig" id="rsa-svg" viewBox="0 0 340 250" role="img" aria-label="RSA の暗号化と復号の流れ"></svg>
+      <div class="out" id="rsa-out"></div>
+    </div>
+  </section>
+
+  <!-- §4 -->
+  <section class="view" id="v-crt" role="tabpanel" aria-labelledby="t-crt" hidden>
+    <h2><span class="sec">§4</span>余りの組で、数を一意に決める</h2>
+    <p class="lead">0 から n₁n₂ − 1 までの各 x を、(x mod n₁, x mod n₂) の位置に置いた表です。互いに素なら全マスがちょうど1つずつ埋まり、そうでないと空きと重複が出ます。マスをクリックすると解き方が出ます。</p>
+    <div class="controls">
+      <label for="crt-a">n₁<select id="crt-a"></select></label>
+      <label for="crt-b">n₂<select id="crt-b"></select></label>
+    </div>
+    <div class="tbl"><div class="grid" id="crt-grid"></div></div>
+    <div class="out" id="crt-out"></div>
+    <p class="note">n₁ = 4、n₂ = 6 にすると、半分のマスが空になり、残りに2つずつ入ります。gcd(4, 6) = 2 なので、2 で割った余りが食い違う組は作れないためです。</p>
+  </section>
+
+  <!-- §5 -->
+  <section class="view" id="v-group" role="tabpanel" aria-labelledby="t-group" hidden>
+    <h2><span class="sec">§5</span>Z_p* の中を、元の冪がめぐる</h2>
+    <p class="lead">元 g を選ぶと、g, g², g³, … が円周上をたどり、1 に戻ったところで止まります。たどった点の数が g の位数で、必ず p − 1 の約数になります（ラグランジュの定理）。</p>
+    <div class="controls">
+      <label for="gp-p">素数 p<select id="gp-p"></select></label>
+    </div>
+    <div class="chips" id="gp-chips" aria-label="元を選ぶ"></div>
+    <div class="split">
+      <svg class="fig" id="gp-svg" viewBox="0 0 340 340" role="img" aria-label="選んだ元の冪の軌道"></svg>
+      <div class="out" id="gp-out"></div>
+    </div>
+    <p class="note">ボタンの小さな数字は各元の位数、青枠は生成元です。生成元の個数は φ(p − 1) 個になります。</p>
+  </section>
+
+  <!-- §6 -->
+  <section class="view" id="v-birthday" role="tabpanel" aria-labelledby="t-birthday" hidden>
+    <h2><span class="sec">§6</span>n ビットのハッシュは、約 2^(n/2) 回で衝突する</h2>
+    <p class="lead">n ビットの乱数を、同じ値が2回出るまで引き続ける実験を繰り返します。橙の階段が実験結果、青の曲線が理論値 1 − exp(−q²/2N) です。</p>
+    <div class="controls">
+      <label for="bd-bits">出力ビット数 = <span id="bd-bv">16</span><input type="range" id="bd-bits" min="8" max="28" value="16"></label>
+      <label for="bd-trials">試行回数<select id="bd-trials"><option>50</option><option selected>200</option><option>500</option></select></label>
+      <button class="btn" id="bd-run">実験する</button>
+    </div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>理論値</span><span><i style="background:var(--hot)"></i>実験（衝突までの回数の累積分布）</span></div>
+    <canvas id="bd-cv" aria-label="衝突確率のグラフ"></canvas>
+    <div class="out" id="bd-out"></div>
+    <p class="note">実験には暗号論的な乱数（Web Crypto）を使っています。ビット数を2増やすと、衝突までの回数は約2倍、つまり √2 の2乗倍ずつ伸びます。</p>
+  </section>
+
+  <!-- §7 -->
+  <section class="view" id="v-negl" role="tabpanel" aria-labelledby="t-negl" hidden>
+    <h2><span class="sec">§7</span>多項式の逆数は、いずれ必ず追い抜かれる</h2>
+    <p class="lead">縦軸は「確率の小ささ」を log₂(1/f(n)) ビットで、横軸は n を log₂ n で表しています（両軸とも対数的）。上にある曲線ほど小さい確率です。次数 k を上げても、1/n^k の直線はいずれ指数型の曲線に追い抜かれます。</p>
+    <div class="controls">
+      <label for="ng-k">多項式の次数 k = <span id="ng-kv">10</span><input type="range" id="ng-k" min="1" max="60" value="10"></label>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--hot)"></i>1/n^k（無視できない）</span>
+      <span><i style="background:var(--accent)"></i>2^(−√n)</span>
+      <span><i style="background:var(--good)"></i>n^(−log₂ n)</span>
+      <span><i style="background:var(--muted)"></i>2^(−n)</span>
+    </div>
+    <canvas id="ng-cv" aria-label="無視できる関数の比較グラフ"></canvas>
+    <div class="out" id="ng-out"></div>
+  </section>
+
+  <footer>計算はすべてこのページの中で行われ、入力はどこにも送られません。おもちゃの RSA はパディングがない教科書 RSA なので、実際の暗号化には使えません。</footer>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const NS='http://www.w3.org/2000/svg';
+function S(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+function T(tag,attrs,parent,text){const e=S(tag,attrs,parent);e.textContent=text;return e;}
+function clear(el){while(el.firstChild)el.removeChild(el.firstChild);}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+const mod=(a,n)=>((a%n)+n)%n;
+const bmod=(a,n)=>((a%n)+n)%n;
+function parseB(v){const s=String(v).trim();return /^-?\d+$/.test(s)?BigInt(s):null;}
+function bgcd(a,b){a=a<0n?-a:a;b=b<0n?-b:b;while(b){[a,b]=[b,a%b];}return a;}
+function egcd(a,b){let r0=a,r1=b,s0=1n,s1=0n,t0=0n,t1=1n;while(r1){const q=r0/r1;[r0,r1]=[r1,r0-q*r1];[s0,s1]=[s1,s0-q*s1];[t0,t1]=[t1,t0-q*t1];}return [r0,s0,t0];}
+function bpow(a,e,n){let r=1n%n;a=bmod(a,n);while(e>0n){if(e&1n)r=r*a%n;a=a*a%n;e>>=1n;}return r;}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function short(b){const s=b.toString();return s.length>40?s.slice(0,18)+'…'+s.slice(-18)+` (${s.length}桁)`:s;}
+
+/* ---------- tabs ---------- */
+const views=['clock','euclid','power','crt','group','birthday','negl'];
+let current='clock';
+function show(name){
+  if(!views.includes(name))name='clock';
+  current=name;
+  views.forEach(v=>{$('#v-'+v).hidden=v!==name;$('#t-'+v).setAttribute('aria-selected',String(v===name));});
+  if(name==='birthday')drawBirthday();
+  if(name==='negl')drawNegl();
+}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.v;show(v);try{history.replaceState(null,'','#'+v);}catch(e){try{location.hash=v;}catch(_){}}
+}));
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+/* ---------- §1 clock ---------- */
+function drawClock(){
+  const n=+$('#ck-n').value;$('#ck-nv').textContent=n;
+  const a=parseInt($('#ck-a').value,10)||0,b=parseInt($('#ck-b').value,10)||0,op=$('#ck-op').value;
+  const f=(x,y)=>op==='+'?x+y:op==='-'?x-y:x*y;
+  const ra=mod(a,n),rb=mod(b,n),raw=f(a,b),r=mod(raw,n),raw2=f(ra,rb);
+  const svg=$('#ck-svg');clear(svg);
+  const cx=170,cy=170,R=128,small=n>16;
+  S('circle',{cx,cy,r:R,fill:'none',stroke:'var(--line)','stroke-width':2},svg);
+  const pt=k=>{const t=-Math.PI/2+2*Math.PI*k/n;return [cx+R*Math.cos(t),cy+R*Math.sin(t)];};
+  const [rx,ry]=pt(r);
+  S('line',{x1:cx,y1:cy,x2:cx+(rx-cx)*0.82,y2:cy+(ry-cy)*0.82,stroke:'var(--hot)','stroke-width':3,'stroke-linecap':'round'},svg);
+  S('circle',{cx,cy,r:5,fill:'var(--hot)'},svg);
+  for(let k=0;k<n;k++){
+    const [x,y]=pt(k),isA=k===ra,isB=k===rb,isR=k===r;
+    const fill=isR?'var(--hot)':isA?'var(--accent)':'var(--panel)';
+    const stroke=isR?'var(--hot)':(isA||isB)?'var(--accent)':'var(--line)';
+    S('circle',{cx:x,cy:y,r:small?11:14,fill,stroke,'stroke-width':(isB&&!isA&&!isR)?3:1.5},svg);
+    T('text',{x,y:y+(small?4:4.5),'text-anchor':'middle','font-size':small?10.5:13,'font-family':'JetBrains Mono, monospace',fill:(isR||isA)?'var(--on-accent)':'var(--ink)'},svg,k);
+  }
+  T('text',{x:cx,y:cy+30,'text-anchor':'middle','font-size':13,fill:'var(--muted)'},svg,`mod ${n}`);
+  const opS=op==='*'?'×':op==='-'?'−':'+';
+  const jrem=raw%n;
+  let html=`${a} ≡ ${ra}、 ${b} ≡ ${rb}　(mod ${n})<br>`+
+    `${a} ${opS} ${b} = ${raw} ≡ <b>${r}</b>　(mod ${n})<br>`+
+    `先に余りを取ると: ${ra} ${opS} ${rb} = ${raw2} ≡ <b>${mod(raw2,n)}</b>　<span class="ok">一致</span>`;
+  if(jrem!==r) html+=`<br><span class="warn">注意: Java の (${raw}) % ${n} は ${jrem}、Math.floorMod は ${r}</span>`;
+  $('#ck-out').innerHTML=html;
+}
+['ck-n','ck-a','ck-b','ck-op'].forEach(id=>$('#'+id).addEventListener('input',drawClock));
+
+/* ---------- §2 euclid ---------- */
+let euRows=[],euShown=2;
+function euBuild(){
+  const a=parseB($('#eu-a').value),n=parseB($('#eu-n').value);
+  euRows=[];
+  if(a===null||n===null||n<2n||a<0n){euRows=null;euShown=0;euRender();return;}
+  let r0=n,r1=a,s0=1n,s1=0n,t0=0n,t1=1n;
+  euRows.push({q:null,r:r0,s:s0,t:t0},{q:null,r:r1,s:s1,t:t1});
+  let guard=0;
+  while(r1!==0n&&guard<400){const q=r0/r1;[r0,r1]=[r1,r0-q*r1];[s0,s1]=[s1,s0-q*s1];[t0,t1]=[t1,t0-q*t1];euRows.push({q,r:r1,s:s1,t:t1});guard++;}
+  euShown=2;euRender();
+}
+function euRender(){
+  const body=$('#eu-body');body.innerHTML='';
+  euDraw();
+  if(!euRows){$('#eu-out').innerHTML='<span class="warn">a は 0 以上、n は 2 以上の整数を入れてください。</span>';return;}
+  const n=parseB($('#eu-n').value),a=parseB($('#eu-a').value);
+  const done=euShown>=euRows.length;
+  euRows.slice(0,euShown).forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    const isG=i===euRows.length-2;
+    if(done&&isG)tr.className='fin';else if(i===euShown-1&&i>1&&!done)tr.className='new';
+    tr.innerHTML=`<td>${i}</td><td>${row.q===null?'':short(row.q)}</td><td>${short(row.r)}</td><td>${short(row.s)}</td><td>${short(row.t)}</td><td class="l">${short(row.r)} = ${short(row.s)}·${short(n)} + ${short(row.t)}·${short(a)}</td>`;
+    body.appendChild(tr);
+  });
+  if(!done){$('#eu-out').innerHTML=`${euShown} 行目まで表示中。あと ${euRows.length-euShown} 行で r が 0 になります。`;return;}
+  const g=euRows[euRows.length-2],steps=euRows.length-2;
+  let html=`r が 0 になったので、その1つ上の行が答えです（割り算 ${steps} 回）。<br>gcd(${short(a)}, ${short(n)}) = <b>${short(g.r)}</b>`;
+  if(g.r===1n){const inv=bmod(g.t,n);html+=`<br>${short(g.s)}·${short(n)} + ${short(g.t)}·${short(a)} = 1 なので、a⁻¹ ≡ ${short(g.t)} ≡ <b>${short(inv)}</b>　(mod ${short(n)})<br>検算: ${short(a)} × ${short(inv)} mod ${short(n)} = ${short(a*inv%n)} <span class="ok">✓</span>`;}
+  else html+=`<br><span class="warn">gcd ≠ 1 なので、mod ${short(n)} での逆元は存在しません。</span>`;
+  $('#eu-out').innerHTML=html;
+}
+/* 長方形を正方形で切り取る図。表の各行（q ≥ 1 の割り算）が1手に対応する */
+let euAnim=false,euTimer=null;
+function euDraw(){
+  const svg=$('#eu-svg'),cap=$('#eu-cap');clear(svg);
+  const a=parseB($('#eu-a').value),n=parseB($('#eu-n').value);
+  if(!euRows||a===null||n===null||a===0n){cap.textContent='a と n が正の整数のとき、長方形の切り取りを表示します。';euAnim=false;return;}
+  if(a>10n**15n||n>10n**15n){cap.textContent='数が大きすぎるため、図は省略しています。';euAnim=false;return;}
+  const W=Number(a>n?a:n),H=Number(a>n?n:a);
+  const sc=Math.min(632/W,200/H),ox=24+(632-W*sc)/2,oy=24,vh=Math.round(H*sc+48);
+  svg.setAttribute('viewBox',`0 0 680 ${vh}`);
+  const steps=[];let x=0,y=0,w=W,h=H;
+  while(w>0&&h>0&&steps.length<200){const sq=[];
+    if(w>=h){const q=Math.floor(w/h);for(let i=0;i<q&&i<400;i++)sq.push([x+i*h,y,h]);x+=q*h;w-=q*h;}
+    else{const q=Math.floor(h/w);for(let i=0;i<q&&i<400;i++)sq.push([x,y+i*w,w]);y+=q*w;h-=q*w;}
+    steps.push({sq,rem:[x,y,w,h]});}
+  const offset=a>n?1:0,g=Math.max(0,Math.min(steps.length,euShown-2-offset));
+  S('rect',{x:ox,y:oy,width:W*sc,height:H*sc,fill:'none',stroke:'var(--line)','stroke-width':1.5},svg);
+  for(let j=0;j<g;j++)steps[j].sq.forEach(([sx,sy,s])=>{
+    S('rect',{x:ox+sx*sc,y:oy+sy*sc,width:Math.max(s*sc,0.6),height:Math.max(s*sc,0.6),class:`sq c${j%4}`+(euAnim&&j===g-1?' fresh':'')},svg);});
+  if(g<steps.length){const r=g===0?[0,0,W,H]:steps[g-1].rem;
+    S('rect',{x:ox+r[0]*sc,y:oy+r[1]*sc,width:r[2]*sc,height:r[3]*sc,fill:'none',stroke:'var(--ink)','stroke-width':2,'stroke-dasharray':'5 4'},svg);
+    cap.textContent=`${W} × ${H} の長方形。${g} 手目まで切り取り済みで、点線が残りの ${r[2]} × ${r[3]} の長方形です。「1行進める」で次の正方形を切り取ります。`;}
+  else{const side=steps[steps.length-1].sq[0][2];
+    cap.textContent=`${steps.length} 手で、一辺 ${side} の正方形によってぴったり埋まりました。この ${side} が gcd(${a}, ${n}) です。`;}
+  euAnim=false;
+}
+function euStop(){if(euTimer){clearInterval(euTimer);euTimer=null;$('#eu-play').textContent='自動再生';}}
+$('#eu-a').addEventListener('input',()=>{euStop();euBuild();});$('#eu-n').addEventListener('input',()=>{euStop();euBuild();});
+$('#eu-step').addEventListener('click',()=>{euStop();if(euRows&&euShown<euRows.length){euShown++;euAnim=true;euRender();}});
+$('#eu-all').addEventListener('click',()=>{euStop();if(euRows){euShown=euRows.length;euRender();}});
+$('#eu-reset').addEventListener('click',()=>{euStop();euShown=2;euRender();});
+$('#eu-play').addEventListener('click',()=>{
+  if(euTimer){euStop();return;}
+  if(!euRows)return;
+  if(euShown>=euRows.length){euShown=2;euRender();}
+  $('#eu-play').textContent='停止';
+  euTimer=setInterval(()=>{
+    if(euShown>=euRows.length){euStop();$('#eu-play').textContent='もう一度再生';return;}
+    euShown++;euAnim=true;euRender();
+  },1100);
+});
+
+/* ---------- §3 power ---------- */
+function drawPower(){
+  const a=parseB($('#pw-a').value),e=parseB($('#pw-e').value),n=parseB($('#pw-n').value);
+  const body=$('#pw-body');body.innerHTML='';
+  if(a===null||e===null||n===null||e<1n||n<2n){$('#pw-out').innerHTML='<span class="warn">a は整数、e は 1 以上、n は 2 以上を入れてください。</span>';return;}
+  const bits=e.toString(2);
+  let r=1n,sq=0,mul=0;const am=bmod(a,n);
+  const rows=[];
+  for(let i=0;i<bits.length;i++){
+    const bit=bits[i];
+    if(i>0){r=r*r%n;sq++;rows.push([bit,'2乗する',r,false]);}
+    if(bit==='1'){r=r*am%n;if(i>0)mul++;rows.push([bit,i===0?'最上位ビット: a から始める':`a = ${short(am)} を掛ける`,r,true]);}
+  }
+  const limit=40;
+  rows.slice(0,limit).forEach(([bit,op,v,hot])=>{const tr=document.createElement('tr');if(hot)tr.className='new';tr.innerHTML=`<td>${bit}</td><td class="l">${op}</td><td>${short(v)}</td>`;body.appendChild(tr);});
+  if(rows.length>limit){const tr=document.createElement('tr');tr.innerHTML=`<td></td><td class="l">… 残り ${rows.length-limit} 行は省略</td><td></td>`;body.appendChild(tr);}
+  const naive=e-1n;
+  $('#pw-out').innerHTML=`e = ${short(e)} = <b>${bits.length>64?bits.slice(0,30)+'…':bits}</b>₂（${bits.length} ビット）<br>`+
+    `${short(a)}^${short(e)} mod ${short(n)} = <b>${short(r)}</b>　組み込みの pow でも ${short(bpow(a,e,n))} <span class="ok">✓</span><br>`+
+    `掛け算: 2乗 ${sq} 回 + 掛け算 ${mul} 回 = ${sq+mul} 回（素朴な方法なら ${short(naive)} 回）`;
+}
+['pw-a','pw-e','pw-n'].forEach(id=>$('#'+id).addEventListener('input',drawPower));
+
+const smallPrimes=[3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97];
+function fillSelect(sel,vals,def){vals.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v===def)o.selected=true;sel.appendChild(o);});}
+fillSelect($('#rsa-p'),smallPrimes,5);fillSelect($('#rsa-q'),smallPrimes,11);
+function drawRSA(){
+  const p=BigInt($('#rsa-p').value),q=BigInt($('#rsa-q').value);
+  const e=parseB($('#rsa-e').value),m=parseB($('#rsa-m').value);
+  const out=$('#rsa-out'),svg=$('#rsa-svg');clear(svg);
+  const n=p*q,phi=(p-1n)*(q-1n);
+  let msg=`n = p·q = ${p}·${q} = <b>${n}</b><br>φ(n) = (p−1)(q−1) = <b>${phi}</b><br>`;
+  let ok=true,d=null,c=null,m2=null;
+  if(p===q){msg+=`<span class="warn">p と q は別の素数にしてください。</span>`;ok=false;}
+  else if(e===null||e<2n){msg+=`<span class="warn">e は 2 以上の整数にしてください。</span>`;ok=false;}
+  else if(bgcd(e,phi)!==1n){msg+=`<span class="warn">gcd(e, φ(n)) = ${bgcd(e,phi)} なので d が作れません。別の e を選んでください。</span>`;ok=false;}
+  else{
+    d=bmod(egcd(e,phi)[1],phi);
+    msg+=`d = e⁻¹ mod φ(n) = <b>${d}</b>　（e·d = ${e*d} = ${(e*d)/phi}·${phi} + 1）<br>`;
+    if(m===null||m<0n||m>=n){msg+=`<span class="warn">平文 m は 0 以上 ${n-1n} 以下にしてください。</span>`;ok=false;}
+    else{c=bpow(m,e,n);m2=bpow(c,d,n);
+      msg+=`暗号化 c = m^e mod n = ${m}^${e} mod ${n} = <b>${c}</b><br>復号 c^d mod n = ${c}^${d} mod ${n} = <b>${m2}</b> ${m2===m?'<span class="ok">元に戻った ✓</span>':''}`;
+      if(bgcd(m,n)!==1n)msg+=`<br>m は n と互いに素ではありませんが、§4 の中国剰余定理によりそれでも戻ります。`;}
+  }
+  out.innerHTML=msg;
+  // flow figure
+  const ink='var(--ink)',muted='var(--muted)';
+  S('defs',{},svg).innerHTML=`<marker id="rsa-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>`;
+  const box=(x,y,w,label,val,accent)=>{S('rect',{x,y,width:w,height:56,rx:8,fill:accent?'var(--accent-soft)':'var(--panel)',stroke:accent?'var(--accent)':'var(--line)','stroke-width':accent?2:1.25},svg);
+    T('text',{x:x+w/2,y:y+22,'text-anchor':'middle','font-size':12,fill:muted},svg,label);
+    T('text',{x:x+w/2,y:y+44,'text-anchor':'middle','font-size':17,'font-weight':600,'font-family':'JetBrains Mono, monospace',fill:ink},svg,val);};
+  const arrow=(x1,y1,x2,y2,label,lx,ly)=>{const g=S('g',{style:'color:var(--accent)'},svg);S('path',{d:`M${x1} ${y1}L${x2} ${y2}`,stroke:'var(--accent)','stroke-width':1.5,fill:'none','marker-end':'url(#rsa-ar)'},g);T('text',{x:lx,y:ly,'text-anchor':'middle','font-size':12,'font-family':'JetBrains Mono, monospace',fill:'var(--accent)'},svg,label);};
+  box(16,20,92,'平文 m',ok?String(m):'—',false);
+  box(232,20,92,'暗号文 c',ok?String(c):'—',true);
+  box(124,170,92,'復号結果',ok?String(m2):'—',false);
+  arrow(108,48,232,48,`^${e===null?'e':e} mod ${n}`,170,38);
+  arrow(278,76,214,170,`^${d===null?'d':d}`,268,130);
+  T('text',{x:170,y:118,'text-anchor':'middle','font-size':11.5,fill:muted},svg,'公開鍵 (n, e) で暗号化');
+  T('text',{x:170,y:136,'text-anchor':'middle','font-size':11.5,fill:muted},svg,'秘密鍵 d で復号');
+  arrow(124,198,64,78,'',0,0);
+  T('text',{x:62,y:140,'text-anchor':'middle','font-size':11.5,fill:muted},svg,ok&&m2===m?'一致':'');
+}
+['rsa-p','rsa-q','rsa-e','rsa-m'].forEach(id=>$('#'+id).addEventListener('input',drawRSA));
+
+/* ---------- §4 CRT ---------- */
+const crtVals=[2,3,4,5,6,7,8,9,10,11,12];
+fillSelect($('#crt-a'),crtVals,3);fillSelect($('#crt-b'),crtVals,5);
+let crtSel=[2,3];
+function drawCRT(){
+  const n1=+$('#crt-a').value,n2=+$('#crt-b').value,N=n1*n2;
+  if(crtSel[0]>=n1||crtSel[1]>=n2)crtSel=[Math.min(crtSel[0],n1-1),Math.min(crtSel[1],n2-1)];
+  const cells=Array.from({length:n1},()=>Array.from({length:n2},()=>[]));
+  for(let x=0;x<N;x++)cells[x%n1][x%n2].push(x);
+  const grid=$('#crt-grid');grid.innerHTML='';
+  grid.style.gridTemplateColumns=`2.6em repeat(${n2}, minmax(2.4em,1fr))`;
+  const head=document.createElement('div');head.className='h';head.textContent='↓mod n₁ / mod n₂→';head.style.fontSize='9px';grid.appendChild(head);
+  for(let j=0;j<n2;j++){const h=document.createElement('div');h.className='h';h.textContent=j;grid.appendChild(h);}
+  for(let i=0;i<n1;i++){
+    const h=document.createElement('div');h.className='h';h.textContent=i;grid.appendChild(h);
+    for(let j=0;j<n2;j++){
+      const c=document.createElement('div'),list=cells[i][j];
+      c.className='c'+(list.length===0?' empty':'')+(list.length>1?' multi':'')+(i===crtSel[0]&&j===crtSel[1]?' sel':'');
+      c.textContent=list.join(',');
+      if(list.length){c.tabIndex=0;c.setAttribute('role','button');c.setAttribute('aria-label',`x mod ${n1} = ${i}, x mod ${n2} = ${j}`);
+        const pick=()=>{crtSel=[i,j];drawCRT();};c.addEventListener('click',pick);c.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pick();}});}
+      grid.appendChild(c);
+    }
+  }
+  const g=Number(bgcd(BigInt(n1),BigInt(n2)));
+  const [a1,a2]=crtSel,list=cells[a1][a2];
+  let html=`連立合同式 x ≡ ${a1} (mod ${n1})、x ≡ ${a2} (mod ${n2})<br>`;
+  if(g===1){
+    const N1=n2,N2=n1,y1=Number(bmod(egcd(BigInt(N1%n1),BigInt(n1))[1],BigInt(n1))),y2=Number(bmod(egcd(BigInt(N2%n2),BigInt(n2))[1],BigInt(n2)));
+    const x=mod(a1*N1*y1+a2*N2*y2,N);
+    html+=`N = ${N}、N₁ = ${N1}、y₁ = ${N1}⁻¹ mod ${n1} = ${y1}、N₂ = ${N2}、y₂ = ${N2}⁻¹ mod ${n2} = ${y2}<br>`+
+      `x = ${a1}·${N1}·${y1} + ${a2}·${N2}·${y2} = ${a1*N1*y1+a2*N2*y2} ≡ <b>${x}</b>　(mod ${N})<br><span class="ok">gcd = 1 なので、すべてのマスにちょうど1つの数が入っています。</span>`;
+  }else{
+    html+=`解: ${list.length?list.join(', '):'なし'}<br><span class="warn">gcd(${n1}, ${n2}) = ${g} なので、空のマスが ${n1*n2-n1*n2/g} 個、${g} 個ずつ入ったマスが ${n1*n2/g} 個できます。</span>`;
+  }
+  $('#crt-out').innerHTML=html;
+}
+['crt-a','crt-b'].forEach(id=>$('#'+id).addEventListener('input',drawCRT));
+
+/* ---------- §5 group ---------- */
+const gpPrimes=[5,7,11,13,17,19,23,29,31];
+fillSelect($('#gp-p'),gpPrimes,13);
+let gpG=2;
+function orderOf(g,p){let x=g%p,k=1;while(x!==1){x=x*g%p;k++;}return k;}
+function phiInt(n){let r=n,m=n;for(let d=2;d*d<=m;d++){if(m%d===0){while(m%d===0)m/=d;r-=r/d;}}if(m>1)r-=r/m;return r;}
+function drawGroup(){
+  const p=+$('#gp-p').value;if(gpG>=p)gpG=2;
+  const orders=[];for(let g=1;g<p;g++)orders[g]=orderOf(g,p);
+  const chips=$('#gp-chips');chips.innerHTML='';
+  for(let g=1;g<p;g++){const b=document.createElement('button');b.className='chip'+(orders[g]===p-1?' gen':'')+(g===gpG?' sel':'');
+    b.innerHTML=`${g}<small>${orders[g]}</small>`;b.setAttribute('aria-label',`元 ${g}、位数 ${orders[g]}`);b.addEventListener('click',()=>{gpG=g;drawGroup();});chips.appendChild(b);}
+  const svg=$('#gp-svg');clear(svg);
+  S('defs',{},svg).innerHTML=`<marker id="gp-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>`;
+  const cx=170,cy=170,R=130,m=p-1;
+  const pt=v=>{const t=-Math.PI/2+2*Math.PI*(v-1)/m;return [cx+R*Math.cos(t),cy+R*Math.sin(t)];};
+  S('circle',{cx,cy,r:R,fill:'none',stroke:'var(--grid)','stroke-width':1.5},svg);
+  const orbit=[];let x=gpG;do{orbit.push(x);x=x*gpG%p;}while(orbit[orbit.length-1]!==1);
+  const inOrbit=new Set(orbit);
+  const lg=S('g',{style:'color:var(--accent)'},svg);
+  const rr=m>20?10:13;
+  for(let i=0;i<orbit.length;i++){const from=orbit[i],to=orbit[(i+1)%orbit.length];if(orbit.length===1)break;
+    const [x1,y1]=pt(from),[x2,y2]=pt(to),dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;
+    S('path',{d:`M${x1+dx/L*rr} ${y1+dy/L*rr}L${x2-dx/L*(rr+2)} ${y2-dy/L*(rr+2)}`,stroke:'var(--accent)','stroke-width':1.6,fill:'none','marker-end':'url(#gp-ar)',opacity:0.85},lg);}
+  for(let v=1;v<p;v++){const [px,py]=pt(v),on=inOrbit.has(v),isG=v===gpG,isOne=v===1;
+    S('circle',{cx:px,cy:py,r:rr,fill:isG?'var(--accent)':isOne?'var(--hot)':on?'var(--accent-soft)':'var(--panel)',stroke:on?'var(--accent)':'var(--line)','stroke-width':on?1.5:1},svg);
+    T('text',{x:px,y:py+4,'text-anchor':'middle','font-size':m>20?10.5:12.5,'font-family':'JetBrains Mono, monospace',fill:(isG||isOne)?'var(--on-accent)':on?'var(--ink)':'var(--muted)'},svg,v);}
+  T('text',{x:cx,y:cy-4,'text-anchor':'middle','font-size':13,fill:'var(--muted)'},svg,`Z_${p}*`);
+  T('text',{x:cx,y:cy+16,'text-anchor':'middle','font-size':12,fill:'var(--muted)'},svg,`位数 ${p-1} の群`);
+  const ord=orbit.length,divs=[];for(let d=1;d<=p-1;d++)if((p-1)%d===0)divs.push(d);
+  const gens=orders.filter(o=>o===p-1).length;
+  $('#gp-out').innerHTML=`${gpG} の冪: ${orbit.map((v,i)=>`${gpG}^${i+1}=${v}`).join(', ')}<br>`+
+    `位数 = <b>${ord}</b>　（p − 1 = ${p-1} の約数 ${divs.join(', ')} のどれか <span class="ok">✓</span>）<br>`+
+    (ord===p-1?`<span class="ok">${gpG} は生成元です。Z_${p}* のすべての元を回ります。</span>`:`⟨${gpG}⟩ = {${[...orbit].sort((a,b)=>a-b).join(', ')}} は位数 ${ord} の部分群です。`)+
+    `<br>生成元の個数: ${gens} 個 = φ(${p-1})`;
+}
+$('#gp-p').addEventListener('input',drawGroup);
+
+/* ---------- canvas helper ---------- */
+function plot(cv,o){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth||600,h=o.h;
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv.style.height=h+'px';
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  const pad={l:56,r:16,t:14,b:42},W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+  const X=v=>pad.l+(v-o.xmin)/(o.xmax-o.xmin)*W,Y=v=>pad.t+H-(v-o.ymin)/(o.ymax-o.ymin)*H;
+  const ink=css('--ink'),muted=css('--muted'),grid=css('--grid'),line=css('--line');
+  g.font='11.5px JetBrains Mono, monospace';g.lineWidth=1;
+  g.strokeStyle=grid;g.fillStyle=muted;g.textAlign='right';g.textBaseline='middle';
+  o.yticks.forEach(t=>{g.beginPath();g.moveTo(pad.l,Y(t.v));g.lineTo(pad.l+W,Y(t.v));g.stroke();g.fillText(t.label,pad.l-8,Y(t.v));});
+  g.textAlign='center';g.textBaseline='top';
+  o.xticks.forEach(t=>{g.beginPath();g.moveTo(X(t.v),pad.t);g.lineTo(X(t.v),pad.t+H);g.stroke();g.fillText(t.label,X(t.v),pad.t+H+6);});
+  g.strokeStyle=line;g.beginPath();g.moveTo(pad.l,pad.t+H);g.lineTo(pad.l+W,pad.t+H);g.stroke();
+  g.fillStyle=muted;g.font='12px Zen Kaku Gothic New, sans-serif';g.fillText(o.xlabel,pad.l+W/2,pad.t+H+24);
+  g.save();g.translate(14,pad.t+H/2);g.rotate(-Math.PI/2);g.textBaseline='middle';g.fillText(o.ylabel,0,0);g.restore();
+  g.save();g.beginPath();g.rect(pad.l,pad.t,W,H);g.clip();
+  o.series.forEach(s=>{g.strokeStyle=css(s.color);g.lineWidth=s.width||2;g.setLineDash(s.dash||[]);g.beginPath();
+    s.pts.forEach(([x,y],i)=>{const px=X(x),py=Y(y);if(i===0||(s.step&&false))g.moveTo(px,py);else g.lineTo(px,py);});g.stroke();});
+  g.setLineDash([]);
+  (o.marks||[]).forEach(m=>{g.strokeStyle=css(m.color);g.lineWidth=1.25;g.setLineDash([4,4]);g.beginPath();g.moveTo(X(m.x),pad.t);g.lineTo(X(m.x),pad.t+H);g.stroke();g.setLineDash([]);
+    g.fillStyle=css(m.color);g.textAlign=m.align||'left';g.textBaseline='top';g.font='11.5px Zen Kaku Gothic New, sans-serif';g.fillText(m.label,X(m.x)+(m.align==='right'?-6:6),pad.t+4+(m.dy||0));});
+  g.restore();
+  return {X,Y};
+}
+
+/* ---------- §6 birthday ---------- */
+let bdResult=null,bdRunning=false;
+const rbuf=new Uint32Array(8192);let rpos=rbuf.length;
+function rnd(){if(rpos>=rbuf.length){crypto.getRandomValues(rbuf);rpos=0;}return rbuf[rpos++];}
+function oneTrial(bits){const seen=new Set(),sh=32-bits;let q=0;for(;;){const v=rnd()>>>sh;q++;if(seen.has(v))return q;seen.add(v);}}
+function drawBirthday(){
+  if(current!=='birthday')return;
+  const bits=+$('#bd-bits').value,N=Math.pow(2,bits),sN=Math.sqrt(N);$('#bd-bv').textContent=bits;
+  const xmax=3*sN,pts=[];
+  for(let i=0;i<=200;i++){const q=xmax*i/200;pts.push([q/sN,1-Math.exp(-q*q/(2*N))]);}
+  const series=[{pts,color:'--accent',width:2.5}];
+  if(bdResult&&bdResult.bits===bits){const arr=bdResult.counts.slice().sort((a,b)=>a-b),k=arr.length,st=[[0,0]];
+    arr.forEach((q,i)=>{st.push([q/sN,i/k]);st.push([q/sN,(i+1)/k]);});st.push([3,1]);series.push({pts:st,color:'--hot',width:2});}
+  plot($('#bd-cv'),{h:280,xmin:0,xmax:3,ymin:0,ymax:1,
+    xticks:[0,0.5,1,1.5,2,2.5,3].map(v=>({v,label:v===0?'0':`${v}√N`})),
+    yticks:[0,0.25,0.5,0.75,1].map(v=>({v,label:`${v*100}%`})),
+    xlabel:`引いた個数 q（√N = 2^${bits/2} ≈ ${Math.round(sN).toLocaleString()} を単位に）`,ylabel:'衝突済みの割合',
+    series,marks:[{x:1.1774,color:'--muted',label:'50% ≈ 1.18√N'}]});
+  let html=`N = 2^${bits} = ${N.toLocaleString()} 通り。理論上、50% で衝突する個数は約 ${Math.round(1.1774*sN).toLocaleString()} 個、平均は約 ${Math.round(Math.sqrt(Math.PI*N/2)).toLocaleString()} 個です。`;
+  if(bdResult&&bdResult.bits===bits){const c=bdResult.counts,mean=c.reduce((a,b)=>a+b,0)/c.length,s=c.slice().sort((a,b)=>a-b),med=s[Math.floor(s.length/2)];
+    html+=`<br>実験 ${c.length} 回: 平均 <b>${Math.round(mean).toLocaleString()}</b> 個、中央値 <b>${med.toLocaleString()}</b> 個（理論の平均との比 ${(mean/Math.sqrt(Math.PI*N/2)).toFixed(2)}）`;}
+  else html+=`<br>「実験する」を押すと、実測の分布が重なります。`;
+  $('#bd-out').innerHTML=html;
+}
+function runBirthday(){
+  if(bdRunning)return;bdRunning=true;
+  const bits=+$('#bd-bits').value,total=+$('#bd-trials').value,counts=[];
+  const btn=$('#bd-run');btn.disabled=true;
+  function chunk(){const t0=performance.now();while(counts.length<total&&performance.now()-t0<40)counts.push(oneTrial(bits));
+    btn.textContent=`実験中 ${counts.length}/${total}`;
+    if(counts.length<total)setTimeout(chunk,0);else{bdResult={bits,counts};bdRunning=false;btn.disabled=false;btn.textContent='もう一度実験する';drawBirthday();}}
+  chunk();
+}
+$('#bd-run').addEventListener('click',runBirthday);
+$('#bd-bits').addEventListener('input',()=>{$('#bd-run').textContent='実験する';drawBirthday();});
+
+/* ---------- §7 negligible ---------- */
+function drawNegl(){
+  if(current!=='negl')return;
+  const k=+$('#ng-k').value;$('#ng-kv').textContent=k;
+  const L=v=>Math.log10(v);
+  const tmax=40,poly=[],sq=[],ln=[],ex=[];
+  for(let i=0;i<=400;i++){const t=0.5+i*(tmax-0.5)/400;
+    poly.push([t,L(k*t)]);sq.push([t,L(Math.pow(2,t/2))]);ln.push([t,L(t*t)]);ex.push([t,L(Math.pow(2,t))]);}
+  // crossover where 2^(t/2) permanently exceeds k*t
+  let cross=null;for(let t=tmax;t>=0.5;t-=0.01){if(Math.pow(2,t/2)<=k*t){cross=t;break;}}
+  let crossL=null;for(let t=tmax;t>=0.5;t-=0.01){if(t*t<=k*t){crossL=t;break;}}
+  const marks=[];
+  if(cross&&cross<tmax)marks.push({x:cross,color:'--accent',label:`√n型が追い抜く n≈2^${cross.toFixed(1)}`,dy:0});
+  if(crossL&&crossL<tmax&&crossL>0.6)marks.push({x:crossL,color:'--good',label:`n^(−log n)型 n≈2^${crossL.toFixed(1)}`,dy:16});
+  plot($('#ng-cv'),{h:300,xmin:0.5,xmax:tmax,ymin:0,ymax:6,
+    xticks:[1,8,16,24,32,40].map(v=>({v,label:`2^${v}`})),
+    yticks:[0,1,2,3,4,5,6].map(v=>({v,label:v===0?'1':`10^${v}`})),
+    xlabel:'n（対数目盛）',ylabel:'log₂(1/f(n)) ビット',
+    series:[{pts:ex,color:'--muted',width:1.75,dash:[5,4]},{pts:ln,color:'--good',width:2},{pts:sq,color:'--accent',width:2.5},{pts:poly,color:'--hot',width:2.5}],marks});
+  let html=`1/n^${k} の確率の小ささは k·log₂ n = ${k}·log₂ n ビットで、n が増えても「直線」でしか伸びません。<br>`;
+  html+=cross?`2^(−√n) は n ≈ 2^${cross.toFixed(1)} 以降、1/n^${k} より常に小さくなります。`:``;
+  html+=`<br>k を大きくすると追い抜かれる点は右に動きますが、なくなることはありません。これが「どんな多項式 p に対しても、いずれ f(n) &lt; 1/p(n)」という定義の意味です。`;
+  $('#ng-out').innerHTML=html;
+}
+$('#ng-k').addEventListener('input',drawNegl);
+
+/* ---------- redraw on resize / theme ---------- */
+let rt=null;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{drawBirthday();drawNegl();},120);});
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{drawBirthday();drawNegl();});}catch(e){}
+try{new MutationObserver(()=>{drawBirthday();drawNegl();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}
+
+drawClock();euBuild();drawPower();drawRSA();drawCRT();drawGroup();
+show(location.hash.slice(1));
+})();
+</script>
+
+</body>
+</html>

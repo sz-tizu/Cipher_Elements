@@ -1,0 +1,8 @@
+{
+  "name": "cipher-elements-tools",
+  "private": true,
+  "description": "Build helpers for the Cipher Elements site (math rendering).",
+  "dependencies": {
+    "katex": "0.16.11"
+  }
+}

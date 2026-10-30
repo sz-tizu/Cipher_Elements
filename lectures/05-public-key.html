@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第5回 公開鍵暗号 | Cipher Elements</title>
+<meta name="description" content="教科書 RSA は暗号方式ではなく「素材」にすぎない、という感覚をここで掴みます。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-lecture">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">Step 5 · 8〜9週<span class="chip chip-planned">準備中</span></div>
+<h1>第5回 公開鍵暗号</h1>
+<p class="doc-lead">教科書 RSA は暗号方式ではなく「素材」にすぎない、という感覚をここで掴みます。</p>
+</header>
+
+<article class="prose">
+<div class="notice">この回の講義資料は準備中です。下は学習ガイドから抜き出したシラバスで、講義資料が公開されるとこのページが置き換わります。</div>
+
+<p>安全な公開鍵暗号は、素材にパディングや KEM の構造を足して、CCA 安全まで持っていったものです。</p>
+<h3 id="学ぶこと">学ぶこと</h3>
+<ul>
+<li>困難性仮定の階層: 離散対数（DLP）、計算 DH（CDH）、決定 DH（DDH）、RSA 仮定、素因数分解。仮定が強いほど証明できることが増えるが、破られるリスクも上がる</li>
+<li>Diffie-Hellman 鍵交換: 受動的盗聴者には安全だが、中間者には無力（認証が別途必要）</li>
+<li>公開鍵暗号の定義と IND-CPA / IND-CCA2: 公開鍵では攻撃者が自分で暗号化できるため、決定的な暗号化は IND-CPA を満たせない</li>
+<li>ElGamal: DDH 仮定下で IND-CPA。ただし展性があり CCA 安全ではない</li>
+<li>RSA: 教科書 RSA の問題（決定的、展性、小さい e への攻撃）、PKCS#1 v1.5 と Bleichenbacher 攻撃、RSA-OAEP（ランダムオラクルモデルで IND-CCA2）</li>
+<li>KEM/DEM とハイブリッド暗号: 公開鍵で共通鍵を運び、データは AEAD で暗号化する。現代の標準形で、HPKE（RFC 9180）もこの構造</li>
+<li>Cramer-Shoup: ランダムオラクルなしで CCA 安全を示した方式。構成の発想を知る程度でよい</li>
+<li>最良攻撃と鍵長: RSA と有限体 DH には数体ふるい法などの準指数時間攻撃があり、楕円曲線では一般的な攻撃が約 √q 止まり。このため RSA は2048bit以上、楕円曲線は256bitで同程度の強度を狙う</li>
+</ul>
+<h3 id="読む">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: 公開鍵暗号の章、数論的仮定の章</li>
+<li>Boneh &amp; Shoup: 公開鍵暗号の章群（ElGamal、RSA、CCA 安全性）</li>
+<li>Boneh, Twenty Years of Attacks on the RSA Cryptosystem（1999）: 実装ミス由来の攻撃の俯瞰として優れている</li>
+<li>Bleichenbacher (1998) の原論文、RFC 8017（PKCS#1 v2.2）、RFC 9180（HPKE）</li>
+</ul>
+<h3 id="手を動かす">手を動かす</h3>
+<ol>
+<li>教科書 RSA を実装し、同じ平文が同じ暗号文になること、2つの暗号文の積が平文の積に対応すること（展性）を確認する</li>
+<li>RSA のブロードキャスト攻撃（e=3、同一平文を3宛先に送信）を CRT で破る（Cryptopals Set 5）</li>
+<li>PKCS#1 v1.5 のパディングオラクル攻撃を実装する（Cryptopals Set 6 の Bleichenbacher 系課題。簡易版でよい）</li>
+<li>DH で小さい部分群へ誘導する攻撃（small subgroup attack）を試し、公開鍵検証の必要性を体感する</li>
+</ol>
+<h3 id="到達チェック">到達チェック</h3>
+<ul>
+<li>「RSA は暗号化に使える」が不正確な理由と、実務で RSA-OAEP や KEM を使う理由を説明できる</li>
+<li>CDH と DDH の違い、DDH が成り立たない群の例を挙げられる</li>
+<li>Bleichenbacher 攻撃が「復号エラーの違い」という1ビットの情報で成立する理由を説明できる</li>
+<li>公開鍵暗号でデータを直接暗号化せず、ハイブリッドにする理由を3つ挙げられる</li>
+</ul>
+
+<nav class="pager" aria-label="前後の回"><a class="pager-prev" href="04-hash-mac-aead.html"><small>前の回</small>第4回 ハッシュ・MAC・AEAD</a><a class="pager-next" href="06-signatures-pki.html"><small>次の回</small>第6回 署名・PKI・ランダムオラクル</a></nav>
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>

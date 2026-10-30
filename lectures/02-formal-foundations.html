@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第2回 暗号の形式的基礎 | Cipher Elements</title>
+<meta name="description" content="「安全」を攻撃者とのゲームとして定義し、仮定への帰着で証明する。現代暗号の流儀を身につける、全体の背骨になる回。">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body class="page-lecture">
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="../index.html"><span class="wm-mark" aria-hidden="true">≡</span>Cipher Elements</a>
+<nav aria-label="サイト"><a href="../index.html">ホーム</a><a href="../guide.html">学習ガイド</a><a href="../index.html#lectures" aria-current="page">講義</a><a href="../labs/01-lab.html">ラボ</a></nav>
+</div></header>
+<main class="doc">
+<div class="doc-grid">
+<header class="doc-head">
+<div class="eyebrow">Step 2 · 3〜4週<span class="chip chip-planned">準備中</span></div>
+<h1>第2回 暗号の形式的基礎</h1>
+<p class="doc-lead">「安全」を攻撃者とのゲームとして定義し、仮定への帰着で証明する。現代暗号の流儀を身につける、全体の背骨になる回。</p>
+</header>
+
+<article class="prose">
+<div class="notice">この回の講義資料は準備中です。下は学習ガイドから抜き出したシラバスで、講義資料が公開されるとこのページが置き換わります。</div>
+
+<p>「安全」を攻撃者とのゲームとして定義し、方式の安全性を仮定への帰着で示す、という現代暗号の流儀をここで身につけます。ここを重く学ぶほど、以降の Step が速く進みます。</p>
+<h3 id="学ぶこと">学ぶこと</h3>
+<ul>
+<li>Kerckhoffs の原則: 安全性は鍵のみに依存させ、方式は公開前提で設計する</li>
+<li>Shannon の完全秘匿性: ワンタイムパッド（OTP）は完全秘匿だが、鍵長はメッセージ長以上が必須（この制約が定理になっている）</li>
+<li>計算量的安全性: 無限の計算力を仮定せず、PPT の攻撃者と無視できる成功確率で定義する。具体的安全性（t, ε）と漸近的安全性の違い</li>
+<li>攻撃者モデル: 既知平文、選択平文（CPA）、選択暗号文（CCA）</li>
+<li>IND-CPA ゲーム: チャレンジャーが秘密ビット b を選び、攻撃者が b を当てる。優位性は次の式で測る</li>
+</ul>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">A</span><span class="mord mathnormal">d</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.07847em;">I</span><span class="mord mathnormal mtight" style="margin-right:0.10903em;">N</span><span class="mord mathnormal mtight" style="margin-right:0.02778em;">D</span><span class="mbin mtight">−</span><span class="mord mathnormal mtight" style="margin-right:0.13889em;">CP</span><span class="mord mathnormal mtight">A</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">A</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0519em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">b</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/2∣</span></span></span></span></span></div>
+
+<ul>
+<li>疑似乱数生成器（PRG）の定義、乱数と区別できないことの意味</li>
+<li>帰着とハイブリッド論法: 「方式を破る A がいれば、仮定を破る B を作れる」を書く型。Shoup の game-hopping（ゲームの列を1段ずつ変える証明）も同じ流れ</li>
+</ul>
+<h3 id="読む">読む</h3>
+<ul>
+<li>Katz &amp; Lindell: 序論、完全秘匿性、計算量的安全な共通鍵暗号の各章（この Step の主教材。章番号は版で異なるので章題で探す）</li>
+<li>Rosulek, The Joy of Cryptography（無料）: OTP、安全性定義、PRG、ハイブリッド論法の章。証明の型を最も平易に学べる</li>
+<li>Bellare &amp; Rogaway の講義ノート（無料）: ゲームベース定義の原典に近い</li>
+<li>日本語: 岡本龍明『現代暗号入門』（共立出版）で用語を日本語に対応させる</li>
+</ul>
+<h3 id="手を動かす">手を動かす</h3>
+<ol>
+<li>OTP の鍵を2回使うと2つの暗号文の XOR が平文同士の XOR になることを示し、crib dragging で復号する（Cryptopals Set 1 の XOR 系課題）</li>
+<li>IND-CPA ゲームを Python で書き、ECB モードの攻撃者が優位性ほぼ 1/2 を達成するのを確認する</li>
+<li>証明練習: G が PRG のとき、G'(s) = G(s) || G(s) が PRG でないことを区別器を構成して示す</li>
+<li>証明練習: G が PRG のとき、独立な2つの鍵に適用して連結した G2(s1, s2) = G(s1) || G(s2) も PRG になることをハイブリッド論法で示す</li>
+</ol>
+<h3 id="到達チェック">到達チェック</h3>
+<ul>
+<li>「決定的な暗号化は IND-CPA を満たせない」理由を、攻撃者の戦略付きで説明できる</li>
+<li>完全秘匿性と計算量的安全性の違いを、鍵長の観点で説明できる</li>
+<li>帰着の構造（A を呼び出す B の作り方、B の成功確率と A の優位性の関係）を白紙から書ける</li>
+<li>「この方式は安全」という主張を見て、攻撃者モデルと仮定を聞き返せる</li>
+</ul>
+
+<nav class="pager" aria-label="前後の回"><a class="pager-prev" href="01-math-foundations.html"><small>前の回</small>第1回 数学的基盤</a><a class="pager-next" href="03-symmetric.html"><small>次の回</small>第3回 共通鍵暗号</a></nav>
+</article>
+</div>
+</main>
+<footer class="sitefoot"><div class="sitefoot-inner">
+<p>Cipher Elements · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
+<p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
+</div></footer>
+<script src="../assets/widgets.js" defer></script>
+</body>
+</html>
