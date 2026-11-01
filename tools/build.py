@@ -311,7 +311,7 @@ def render_index(pages: list[Page], lectures: list[Page]) -> str:
 
 <section class="block" id="lectures">
 <h2>講義</h2>
-<p class="block-lead">Step 1 から順に進む前提で組んでいます。準備中の回は、シラバス（学ぶこと・読む本・演習・到達チェック）を先に公開しています。</p>
+<p class="block-lead">Step 1 から順に進む前提で組んでいます。各回は「この回の地図」で問いと流れを示してから本論に入り、動かせる図と解答つきの演習を添えています。</p>
 <ol class="lec-list">{''.join(cards)}</ol>
 </section>
 

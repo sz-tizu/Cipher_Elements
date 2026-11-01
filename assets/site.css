@@ -382,6 +382,6 @@ dialog.search::backdrop { background: rgb(15 18 30 / 0.45); }
 .cert-opts .w-chip { font-family: var(--sans, inherit); cursor: pointer; }
 .cert-opts .w-chip { display: flex; align-items: center; gap: 8px; }
 .cert-opts .w-chip input, .w-check input { margin: 0; }
-.w-check { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.w-check { display: inline-flex; align-items: center; gap: 6px; }
 .w-controls label.w-check, .w-controls .cert-opts label.w-chip { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13.5px; }
 .w-controls input[type="checkbox"] { width: auto; padding: 0; margin: 0; accent-color: var(--accent); }
