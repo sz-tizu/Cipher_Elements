@@ -101,7 +101,7 @@ def render_markdown(page: Page, math: list[str]) -> None:
     text = LATEX_BLOCK.sub(stash, page.body_md)
     text = text.replace("{{root}}", page.root)
     md = markdown.Markdown(
-        extensions=["tables", "fenced_code", "sane_lists", "toc", "attr_list"],
+        extensions=["tables", "fenced_code", "sane_lists", "toc", "attr_list", "md_in_html"],
         extension_configs={"toc": {"slugify": slugify, "toc_depth": "2"}},
     )
     page.html = md.convert(text)
@@ -168,13 +168,13 @@ def topbar(root: str, active: str) -> str:
 </dialog>"""
 
 
-def footer(root: str) -> str:
+def footer(root: str, widgets: str = "") -> str:
     return f"""<footer class="sitefoot"><div class="sitefoot-inner">
 <p>{SITE_NAME} · 暗号基礎論の学習ノート。原稿は <code>content/</code> の Markdown で、<code>tools/build.py</code> で生成しています。</p>
 <p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
 </div></footer>
 <script src="{root}assets/widgets.js" defer></script>
-<script src="{root}assets/site.js" defer></script>"""
+{widgets}<script src="{root}assets/site.js" defer></script>"""
 
 
 STATUS_LABEL = {"published": "公開中", "planned": "準備中"}
@@ -222,6 +222,17 @@ def related(page: Page, pages: list[Page]) -> str:
     return f'<aside class="related"><h2>この回の補足ノート</h2><ul>{items}</ul></aside>'
 
 
+def page_scripts(page: Page) -> str:
+    """front matter の widgets: lec01, lec02 … に対応する図のスクリプトを読み込む。"""
+    names = [n.strip() for n in page.meta.get("widgets", "").split(",") if n.strip()]
+    out = ""
+    for n in names:
+        if not (ROOT / "assets" / "w" / f"{n}.js").exists():
+            sys.exit(f"{page.src}: assets/w/{n}.js がありません")
+        out += f'<script src="{page.root}assets/w/{n}.js" defer></script>\n'
+    return out
+
+
 def render_page(page: Page, pages: list[Page], lectures: list[Page]) -> str:
     toc = ""
     if len(page.toc) > 2:
@@ -247,7 +258,7 @@ def render_page(page: Page, pages: list[Page], lectures: list[Page]) -> str:
 </article>
 </div>
 </main>
-{footer(page.root)}
+{footer(page.root, page_scripts(page))}
 </body>
 </html>
 """

@@ -28,6 +28,9 @@
   --hot:#f29159; --hot-soft:#3b281d; --good:#6cc595; color-scheme:dark;}
 
 *{box-sizing:border-box}
+/* Artifact の外では [hidden] を明示しないと display:grid に負けて全タブが表示される */
+[hidden]{display:none!important}
+html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7;}
 .wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
 header h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,5vw,38px);line-height:1.25;margin:0;text-wrap:balance}

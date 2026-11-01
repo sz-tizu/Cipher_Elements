@@ -1,6 +1,7 @@
 ---
 title: 拡張ユークリッドの互除法を直感で掴む
 step: 1
+widgets: lec01
 status: published
 description: ax + by = gcd の係数を、数直線のジャンプと「レシピ」の帳簿で理解する補足ノート。
 ---

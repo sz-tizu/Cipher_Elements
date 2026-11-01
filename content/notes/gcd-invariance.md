@@ -1,6 +1,7 @@
 ---
 title: gcd(a, b) = gcd(b, r) はなぜ成り立つか
 step: 1
+widgets: lec01
 status: published
 description: 互除法の土台になる一歩を、公約数の集合が変わらないことから証明する補足ノート。
 ---
