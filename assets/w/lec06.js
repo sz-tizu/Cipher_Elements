@@ -89,8 +89,9 @@
   // ---------- §4 DSA のノンス再利用 ----------
   W["dsa-nonce"] = function (fig) {
     const c = frame(fig, "同じノンス k で2回署名すると、秘密鍵が計算で求まる");
-    const reuse = el("input", { type: "checkbox", id: nextId("dn"), checked: "" }, c);
-    el("label", { for: reuse.id }, c, "同じ k を使い回す（実装のバグ）");
+    const rl = el("label", { class: "w-check" }, c);
+    const reuse = el("input", { type: "checkbox", checked: "" }, rl);
+    rl.appendChild(document.createTextNode(" 同じ k を使い回す（実装のバグ）"));
     const again = button(c, "鍵を作り直して2回署名する", "primary");
     const out = el("div", { class: "w-out cbc" }, fig);
     // 位数 q = 233 の部分群（p = 467, g = 4）で動く DSA

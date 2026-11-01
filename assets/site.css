@@ -372,3 +372,16 @@ dialog.search::backdrop { background: rgb(15 18 30 / 0.45); }
 .po-cell { text-align: center; padding: 5px 0; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); }
 .po-cell.done { background: var(--good-soft); border-color: var(--good); }
 .po-cell.cur { border-color: var(--hot); background: var(--hot-soft); font-weight: 700; }
+
+/* 第6回: Lamport 署名の表、証明書の確認項目 */
+.lam { display: grid; grid-template-columns: max-content repeat(8, minmax(4.2em, 1fr)); gap: 3px; overflow-x: auto; margin: 6px 0; font-family: var(--mono); font-size: 12px; }
+.lam-h { color: var(--muted); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.lam-c { text-align: center; padding: 5px 2px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.lam-c.open { background: var(--hot-soft); border-color: var(--hot); color: var(--ink); font-weight: 700; }
+.cert-opts { flex-direction: column; align-items: flex-start; width: 100%; }
+.cert-opts .w-chip { font-family: var(--sans, inherit); cursor: pointer; }
+.cert-opts .w-chip { display: flex; align-items: center; gap: 8px; }
+.cert-opts .w-chip input, .w-check input { margin: 0; }
+.w-check { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.w-controls label.w-check, .w-controls .cert-opts label.w-chip { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 13.5px; }
+.w-controls input[type="checkbox"] { width: auto; padding: 0; margin: 0; accent-color: var(--accent); }
