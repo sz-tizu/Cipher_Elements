@@ -350,3 +350,17 @@ dialog.search::backdrop { background: rgb(15 18 30 / 0.45); }
 .game { display: grid; gap: 2px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .game .w-controls { margin-bottom: 4px; }
 .w-out:empty { display: none; }
+
+/* AES の状態・画像（assets/w/lec03.js） */
+.aes-stage { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; justify-content: center; }
+.aes-box { display: grid; gap: 4px; justify-items: center; }
+.aes-label { font-size: 12px; color: var(--muted); }
+.aes-grid { display: grid; grid-template-columns: repeat(4, 2.6em); gap: 3px; font-family: var(--mono); font-size: 13.5px; }
+.aes-cell { text-align: center; padding: 6px 0; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
+.aes-cell.ch { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+.aes-arrow { font-size: 20px; color: var(--muted); }
+.img-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 10px; }
+.img-box { margin: 0; display: grid; gap: 4px; }
+.img-box canvas { width: 100%; height: auto; image-rendering: pixelated; border-radius: 6px; border: 1px solid var(--line); }
+.img-box figcaption { font-size: 12.5px; color: var(--muted); text-align: center; }
+.w-out.cbc { font-size: 13px; }
