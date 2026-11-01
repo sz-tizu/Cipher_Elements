@@ -344,3 +344,9 @@ dialog.search::backdrop { background: rgb(15 18 30 / 0.45); }
 .tbl { overflow-x: auto; }
 .w-controls label > span { color: var(--muted); }
 .w-controls label > span b { color: var(--ink); font-family: var(--mono); }
+.w-out.otp { font-size: 12.5px; }
+.w-out .lbl { display: inline-block; min-width: 7.5em; color: var(--muted); }
+.w-out.bits { word-break: break-all; font-size: 12.5px; }
+.game { display: grid; gap: 2px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.game .w-controls { margin-bottom: 4px; }
+.w-out:empty { display: none; }

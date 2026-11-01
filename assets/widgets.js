@@ -65,17 +65,20 @@
   function seq(fig, spec) {
     const c = frame(fig, spec.title);
     const back = button(c, "戻る"), next = button(c, "次へ", "primary"), all = button(c, "全部表示");
-    const n = spec.actors.length, W0 = 640, colW = (W0 - 80) / (n - 1 || 1), top = 54, rowH = spec.rowH || 46;
+    const n = spec.actors.length, W0 = 640, top = 54, rowH = spec.rowH || 46;
+    const aw = spec.actors.map((a) => Math.max(90, a.length * 14 + 28)), pad = Math.max(...aw) / 2 + 8;
+    const colW = (W0 - 2 * pad) / (n - 1 || 1);
     const H = top + spec.steps.length * rowH + 24;
     const svg = svgEl("svg", { class: "w-svg", viewBox: `0 0 ${W0} ${H}`, role: "img", "aria-label": spec.title }, fig);
     const cap = el("p", { class: "w-cap" }, fig);
     const aid = nextId("seq");
     let k = spec.start ?? spec.steps.length;
-    const X = (i) => 40 + i * colW;
+    if (k === 0) k = 1;
+    const X = (i) => pad + i * colW;
     function draw() {
       clear(svg); arrowDefs(svg, aid, "var(--accent)");
       spec.actors.forEach((a, i) => {
-        const w = Math.max(90, a.length * 13 + 24);
+        const w = aw[i];
         svgEl("rect", { x: X(i) - w / 2, y: 8, width: w, height: 30, rx: 8, fill: "var(--accent-soft)", stroke: "var(--accent)" }, svg);
         svgEl("text", { x: X(i), y: 28, "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: "var(--ink)" }, svg, a);
         svgEl("line", { x1: X(i), x2: X(i), y1: 38, y2: H - 10, stroke: "var(--line)", "stroke-dasharray": "4 4" }, svg);

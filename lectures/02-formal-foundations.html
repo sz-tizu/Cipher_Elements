@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>第2回 暗号の形式的基礎 | Cipher Elements</title>
-<meta name="description" content="「安全」を攻撃者とのゲームとして定義し、仮定への帰着で証明する。現代暗号の流儀を身につける、全体の背骨になる回。">
+<meta name="description" content="「この暗号は安全だ」という主張が正確に何を言っているのかを、攻撃者とのゲームとして定義し、帰着によって証明する。現代暗号の読み方と考え方の背骨になる回。">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,50 +32,720 @@
 <main class="doc">
 <div class="doc-grid">
 <header class="doc-head">
-<div class="eyebrow">Step 2 · 3〜4週<span class="chip chip-planned">準備中</span></div>
+<div class="eyebrow">Step 2 · 3〜4週<span class="chip chip-published">公開中</span></div>
 <h1>第2回 暗号の形式的基礎</h1>
-<p class="doc-lead">「安全」を攻撃者とのゲームとして定義し、仮定への帰着で証明する。現代暗号の流儀を身につける、全体の背骨になる回。</p>
+<p class="doc-lead">「この暗号は安全だ」という主張が正確に何を言っているのかを、攻撃者とのゲームとして定義し、帰着によって証明する。現代暗号の読み方と考え方の背骨になる回。</p>
 </header>
-
+<aside class="toc"><details open><summary>目次</summary><ol><li><a href="#この回の地図">この回の地図</a></li><li><a href="#s1">§1 古典暗号の失敗: なぜ「定義」が要るのか</a></li><li><a href="#s2">§2 完全秘匿性: 理想の安全性を式にする</a></li><li><a href="#s3">§3 理想の限界: 何を諦めるか</a></li><li><a href="#s4">§4 ゲームによる定義: EAV と IND-CPA</a></li><li><a href="#s5">§5 疑似乱数生成器: 何を信じるのか</a></li><li><a href="#s6">§6 帰着による証明: 仮定から安全性を導く</a></li><li><a href="#s7">§7 安全性の主張を読む</a></li><li><a href="#この回のまとめ">この回のまとめ</a></li><li><a href="#演習問題">演習問題</a></li><li><a href="#解答と解説">解答と解説</a></li><li><a href="#読む">読む</a></li></ol></details></aside>
 <article class="prose">
-<div class="notice">この回の講義資料は準備中です。下は学習ガイドから抜き出したシラバスで、講義資料が公開されるとこのページが置き換わります。</div>
-
-<p>「安全」を攻撃者とのゲームとして定義し、方式の安全性を仮定への帰着で示す、という現代暗号の流儀をここで身につけます。ここを重く学ぶほど、以降の Step が速く進みます。</p>
-<h3 id="学ぶこと">学ぶこと</h3>
-<ul>
-<li>Kerckhoffs の原則: 安全性は鍵のみに依存させ、方式は公開前提で設計する</li>
-<li>Shannon の完全秘匿性: ワンタイムパッド（OTP）は完全秘匿だが、鍵長はメッセージ長以上が必須（この制約が定理になっている）</li>
-<li>計算量的安全性: 無限の計算力を仮定せず、PPT の攻撃者と無視できる成功確率で定義する。具体的安全性（t, ε）と漸近的安全性の違い</li>
-<li>攻撃者モデル: 既知平文、選択平文（CPA）、選択暗号文（CCA）</li>
-<li>IND-CPA ゲーム: チャレンジャーが秘密ビット b を選び、攻撃者が b を当てる。優位性は次の式で測る</li>
-</ul>
-<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">A</span><span class="mord mathnormal">d</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.07847em;">I</span><span class="mord mathnormal mtight" style="margin-right:0.10903em;">N</span><span class="mord mathnormal mtight" style="margin-right:0.02778em;">D</span><span class="mbin mtight">−</span><span class="mord mathnormal mtight" style="margin-right:0.13889em;">CP</span><span class="mord mathnormal mtight">A</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">A</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0519em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">b</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/2∣</span></span></span></span></span></div>
-
-<ul>
-<li>疑似乱数生成器（PRG）の定義、乱数と区別できないことの意味</li>
-<li>帰着とハイブリッド論法: 「方式を破る A がいれば、仮定を破る B を作れる」を書く型。Shoup の game-hopping（ゲームの列を1段ずつ変える証明）も同じ流れ</li>
-</ul>
-<h3 id="読む">読む</h3>
-<ul>
-<li>Katz &amp; Lindell: 序論、完全秘匿性、計算量的安全な共通鍵暗号の各章（この Step の主教材。章番号は版で異なるので章題で探す）</li>
-<li>Rosulek, The Joy of Cryptography（無料）: OTP、安全性定義、PRG、ハイブリッド論法の章。証明の型を最も平易に学べる</li>
-<li>Bellare &amp; Rogaway の講義ノート（無料）: ゲームベース定義の原典に近い</li>
-<li>日本語: 岡本龍明『現代暗号入門』（共立出版）で用語を日本語に対応させる</li>
-</ul>
-<h3 id="手を動かす">手を動かす</h3>
-<ol>
-<li>OTP の鍵を2回使うと2つの暗号文の XOR が平文同士の XOR になることを示し、crib dragging で復号する（Cryptopals Set 1 の XOR 系課題）</li>
-<li>IND-CPA ゲームを Python で書き、ECB モードの攻撃者が優位性ほぼ 1/2 を達成するのを確認する</li>
-<li>証明練習: G が PRG のとき、G'(s) = G(s) || G(s) が PRG でないことを区別器を構成して示す</li>
-<li>証明練習: G が PRG のとき、独立な2つの鍵に適用して連結した G2(s1, s2) = G(s1) || G(s2) も PRG になることをハイブリッド論法で示す</li>
+<h2 id="この回の地図">この回の地図</h2>
+<div class="map">
+<p><span class="map-label">この回で答える問い</span></p>
+<p class="lead-q">「この暗号は安全だ」とは、正確には何を主張していて、それをどうやって証明するのか。</p>
+<p>仕様書や論文には、たとえば次のような一文が出てきます。</p>
+<blockquote>
+<p>CTR モードは、ブロック暗号が疑似ランダム関数であれば、IND-CPA 安全である。</p>
+</blockquote>
+<p>この一文は、3つの部品でできています。この回は、その部品を1つずつ組み立てていきます。</p>
+<table>
+<thead>
+<tr>
+<th>部品</th>
+<th>この一文の中では</th>
+<th>問い</th>
+<th>節</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>安全性の定義</td>
+<td>「IND-CPA 安全」</td>
+<td>攻撃者に何ができて、何をされたら負けか</td>
+<td>§1〜§4</td>
+</tr>
+<tr>
+<td>仮定</td>
+<td>「疑似ランダム関数であれば」</td>
+<td>何を信じることにするのか</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>証明</td>
+<td>「〜であれば、〜である」</td>
+<td>仮定から結論をどうやって導くのか</td>
+<td>§6</td>
+</tr>
+</tbody>
+</table>
+<ol class="roadmap">
+<li><small>§1</small><b><a href="#s1">古典暗号の失敗</a></b><span>なぜ定義が要るのか</span></li>
+<li><small>§2</small><b><a href="#s2">完全秘匿性</a></b><span>理想の安全性</span></li>
+<li><small>§3</small><b><a href="#s3">理想の限界</a></b><span>何を諦めるか</span></li>
+<li><small>§4</small><b><a href="#s4">ゲームによる定義</a></b><span>EAV と IND-CPA</span></li>
+<li><small>§5</small><b><a href="#s5">PRG</a></b><span>信じる仮定の形</span></li>
+<li><small>§6</small><b><a href="#s6">帰着</a></b><span>証明の型</span></li>
+<li><small>§7</small><b><a href="#s7">主張を読む</a></b><span>実務での使い方</span></li>
 </ol>
-<h3 id="到達チェック">到達チェック</h3>
+</div>
+<p>前半（§1〜§3）は「安全とは何か」を、理想（完全秘匿性）から現実的な形へ絞り込む流れです。後半（§4〜§6）は、その現実的な形をゲームとして書き下し、証明の型を身につけます。§7 で、仕様書の主張を読むときのチェックリストにまとめます。</p>
+<h3 id="到達目標">到達目標</h3>
 <ul>
-<li>「決定的な暗号化は IND-CPA を満たせない」理由を、攻撃者の戦略付きで説明できる</li>
-<li>完全秘匿性と計算量的安全性の違いを、鍵長の観点で説明できる</li>
-<li>帰着の構造（A を呼び出す B の作り方、B の成功確率と A の優位性の関係）を白紙から書ける</li>
-<li>「この方式は安全」という主張を見て、攻撃者モデルと仮定を聞き返せる</li>
+<li>ケルクホフスの原理を説明し、古典暗号が破られた理由を「定義の欠如」として説明できる</li>
+<li>完全秘匿性を定義し、ワンタイムパッドが満たすことを証明でき、その限界（鍵長）を述べられる</li>
+<li>計算量的安全性が、完全秘匿性から何を緩めたものかを説明できる</li>
+<li>EAV ゲームと IND-CPA ゲームを手順として書け、決定的な暗号化が IND-CPA を満たせない理由を言える</li>
+<li>PRG を定義し、PRG でない例に識別器を作れる</li>
+<li>帰着の構造（攻撃者 A を部品にして識別器 D を作る）を白紙から書ける</li>
 </ul>
+<p>前提は第1回の §7（効率的な攻撃者 PPT と、無視できる関数）です。忘れていたら先に読み返してください。</p>
+<table>
+<thead>
+<tr>
+<th>節</th>
+<th>内容</th>
+<th>目安</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§1</td>
+<td>古典暗号とケルクホフスの原理</td>
+<td>6分</td>
+</tr>
+<tr>
+<td>§2</td>
+<td>完全秘匿性とワンタイムパッド</td>
+<td>10分</td>
+</tr>
+<tr>
+<td>§3</td>
+<td>計算量的安全性へ</td>
+<td>5分</td>
+</tr>
+<tr>
+<td>§4</td>
+<td>ゲームによる定義（EAV、IND-CPA）</td>
+<td>14分</td>
+</tr>
+<tr>
+<td>§5</td>
+<td>疑似乱数生成器</td>
+<td>8分</td>
+</tr>
+<tr>
+<td>§6</td>
+<td>帰着による証明</td>
+<td>12分</td>
+</tr>
+<tr>
+<td>§7</td>
+<td>安全性の主張を読む</td>
+<td>5分</td>
+</tr>
+</tbody>
+</table>
+<h2 id="s1">§1 古典暗号の失敗: なぜ「定義」が要るのか</h2>
+<div class="q">
+<p>古典暗号の設計者は、鍵を秘密にしていた。それでも破られたのはなぜか。そこから、安全性について何を学ぶべきか。</p>
+</div>
+<h3 id="11-シーザー暗号-鍵が少なすぎる">1.1 シーザー暗号: 鍵が少なすぎる</h3>
+<p>アルファベットを鍵の数だけずらす暗号です。鍵は 26 通りしかないので、全部試せば終わります。ただ、全部試さなくても破れる点が、ここでの本題です。下の図で鍵を変えて、暗号文の文字頻度（棒）と英語の標準的な頻度（点）を見比べてください。</p>
+<figure class="widget" data-widget="caesar-freq"></figure>
+
+<p>暗号文の頻度の山の形は、英語の頻度の形をそのまま横にずらしたものです。E が一番多い、という英語の癖が暗号文にも残り、ずれの量がそのまま鍵になります。</p>
+<h3 id="12-換字暗号-鍵が多くても破れる">1.2 換字暗号: 鍵が多くても破れる</h3>
+<p>では、文字を好き勝手に入れ替える換字暗号ならどうでしょう。鍵は 26! ≈ 2^88 通りもあり、総当たりは現実的ではありません。それでも、同じ頻度分析で破れます。暗号文で一番多い文字はおそらく E、その次は T…と当てはめていけば、鍵を全部試さなくても平文が浮かび上がるからです。</p>
+<table>
+<thead>
+<tr>
+<th>暗号</th>
+<th>鍵の数</th>
+<th>破り方</th>
+<th>教訓</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>シーザー暗号</td>
+<td>26</td>
+<td>総当たり、または頻度分析</td>
+<td>鍵が少ないと総当たりで破れる</td>
+</tr>
+<tr>
+<td>換字暗号</td>
+<td>約 2^88</td>
+<td>頻度分析</td>
+<td>鍵が多くても、平文の統計が漏れれば破れる</td>
+</tr>
+<tr>
+<td>ヴィジュネル暗号</td>
+<td>鍵長に応じて多い</td>
+<td>鍵長を推定してから頻度分析</td>
+<td>工夫を重ねても、統計の漏れは残る</td>
+</tr>
+</tbody>
+</table>
+<p>鍵空間が大きいことは「必要条件」ですが「十分条件」ではありません。設計者は「十分に複雑だから安全だろう」と考えていましたが、何を守れば安全と言えるのかを決めていなかったので、守れていない部分に気づけなかったんです。</p>
+<h3 id="13-ケルクホフスの原理">1.3 ケルクホフスの原理</h3>
+<div class="box def">
+<p><strong>ケルクホフスの原理（1883年）</strong> 暗号方式は、鍵以外のすべてが攻撃者に知られても安全であるべきだ。</p>
+</div>
+<p>方式を秘密にする方針がうまくいかない理由は、実務的なものです。</p>
+<ul>
+<li>方式は、実装・配布・解析されるうちに必ず漏れる。漏れたら全員の方式を作り直す必要がある</li>
+<li>鍵なら、漏れても取り替えればよい</li>
+<li>方式を公開すれば、多くの専門家が解析でき、弱点が早く見つかる</li>
+</ul>
+<p>AES も RSA も TLS も、仕様はすべて公開されています。この講座でも、攻撃者は常に方式を知っている前提で考えます。</p>
+<div class="sum">
+<ul>
+<li>古典暗号は、鍵空間が大きくても平文の統計が漏れて破られた。原因は「何を守れば安全か」という定義がなかったこと</li>
+<li>方式は公開し、鍵だけを秘密にする（ケルクホフスの原理）</li>
+<li>次の §2 では、「暗号文から何も漏れない」を正確な式にして、理想の安全性を定義する</li>
+</ul>
+</div>
+<h2 id="s2">§2 完全秘匿性: 理想の安全性を式にする</h2>
+<div class="q">
+<p>「暗号文を見ても、平文について何も分からない」を、どうやって数学の式にするのか。それを満たす暗号は存在するのか。</p>
+</div>
+<h3 id="21-何も分からないを確率で言う">2.1 「何も分からない」を確率で言う</h3>
+<p>攻撃者は、暗号文を見る前から平文について何かを知っているかもしれません。たとえば「攻撃」か「撤退」のどちらかで、7 割の確率で「攻撃」だ、と予想しているとします。暗号文を見たあとも、この予想が少しも動かなければ、暗号文は何も教えていないことになります。</p>
+<div class="box def">
+<p><strong>定義（完全秘匿性、Shannon 1949）</strong> 暗号方式が完全秘匿であるとは、平文 M のどんな分布に対しても、すべての平文 m と、起こりうるすべての暗号文 c について、次が成り立つことをいう。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">m</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">m</span><span class="mclose">]</span></span></span></span></span></div>
+</div>
+<p>左辺は「暗号文 c を見たあとの、平文が m である確率」（事後確率）、右辺は「見る前の確率」（事前確率）です。下の図は、1 ビットの平文（攻撃=0、撤退=1）を 1 ビットの鍵で C = M ⊕ K と暗号化したときの確率です。鍵の偏りを変えて、事後確率がどう動くか見てください。</p>
+<figure class="widget" data-widget="posterior"></figure>
+
+<p>鍵が一様（Pr[K=0] = 0.5）なら、暗号文が 0 でも 1 でも、事後確率は事前確率と同じままです。鍵が少しでも偏ると、暗号文を見ただけで予想が動いてしまいます。</p>
+<h3 id="22-ワンタイムパッド">2.2 ワンタイムパッド</h3>
+<p>1 ビットの例をそのまま長くしたものが、ワンタイムパッド（OTP）です。</p>
+<div class="box def">
+<p><strong>ワンタイムパッド</strong> 平文と同じ長さ ℓ ビットの鍵 k を一様ランダムに選び、Enc(k, m) = m ⊕ k、Dec(k, c) = c ⊕ k とする。</p>
+</div>
+<div class="box thm">
+<p><strong>定理</strong> ワンタイムパッドは完全秘匿である。</p>
+</div>
+<p>証明は、「どの平文からでも、どの暗号文も同じ確率で出てくる」ことを示せば十分です。そうなっていれば、暗号文は平文を区別する手がかりになりません。平文 m を暗号化して c が出るのは、鍵がちょうど k = m ⊕ c のときだけです。鍵は 2^ℓ 通りから一様に選ぶので、次が成り立ちます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord"><span class="mord mathrm">Enc</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.07153em;">K</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">m</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.07153em;">K</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">m</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8991em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span></span></span></span></span></div>
+
+<p>右辺は m によらない定数です。どの平文からも、どの暗号文も確率 2^(−ℓ) で出てくるので、暗号文から平文の手がかりは得られません。ベイズの定理で書き直せば、事後確率と事前確率が等しいことも確かめられます。</p>
+<h3 id="23-otp-の弱点-鍵は一度しか使えない">2.3 OTP の弱点: 鍵は一度しか使えない</h3>
+<p>名前の「ワンタイム」のとおり、同じ鍵で2回暗号化すると崩れます。c₁ = m₁ ⊕ k と c₂ = m₂ ⊕ k の XOR を取ると、鍵が消えます。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></div>
+
+<p>平文どうしの XOR が手に入れば、片方に入っていそうな単語（クリブ）を当てはめることで、もう片方が読めてしまいます。下の図で試してください。</p>
+<figure class="widget" data-widget="otp-reuse"></figure>
+
+<p>これは昔話ではありません。第二次大戦後のソ連の通信を米英が解読した「ヴェノナ計画」は、使い回されたワンタイムパッドが突破口でした。現代でも、CTR モードや GCM でノンスを再利用すると、まったく同じことが起きます（第3回・第4回）。</p>
+<div class="sum">
+<ul>
+<li>完全秘匿性は「暗号文を見ても、平文についての確率が変わらない」こと</li>
+<li>ワンタイムパッドは完全秘匿。ただし鍵は平文と同じ長さで、一度しか使えない</li>
+<li>鍵の再利用は、平文どうしの XOR を漏らす。この弱点は現代のノンス再利用にも引き継がれる</li>
+<li>次の §3 では、この「鍵が長すぎる」問題が OTP 固有のものではなく、完全秘匿性そのものの限界であることを見る</li>
+</ul>
+</div>
+<h2 id="s3">§3 理想の限界: 何を諦めるか</h2>
+<div class="q">
+<p>鍵より長いメッセージを、完全秘匿に送ることはできるのか。できないなら、何を緩めれば実用的な暗号になるのか。</p>
+</div>
+<h3 id="31-シャノンの定理-鍵は平文以上に必要">3.1 シャノンの定理: 鍵は平文以上に必要</h3>
+<div class="box thm">
+<p><strong>定理（Shannon）</strong> 完全秘匿な暗号方式では、鍵の候補の数は平文の候補の数以上でなければならない（|K| ≥ |M|）。</p>
+</div>
+<p>理由は、数え上げです。ある暗号文 c を1つ固定し、すべての鍵で復号してみます。出てくる平文は、多くても鍵の数 |K| 個です。もし |K| &lt; |M| なら、どの鍵で復号しても出てこない平文 m があります。すると「c を見たあと、m の確率は 0」になりますが、見る前は 0 ではありません。完全秘匿性に反します。</p>
+<p>1 GB のファイルを完全秘匿に送るには、1 GB の鍵を事前に安全に共有する必要があります。それができるなら、そもそもファイル自体をその方法で送ればよい、ということになってしまいます。</p>
+<h3 id="32-2つのことを緩める">3.2 2つのことを緩める</h3>
+<p>そこで現代暗号は、「どんな攻撃者にも、まったく漏らさない」という要求を、2か所で緩めます。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>完全秘匿性</th>
+<th>計算量的安全性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>攻撃者の計算能力</td>
+<td>無制限</td>
+<td>効率的（多項式時間、PPT）</td>
+</tr>
+<tr>
+<td>許される漏れ</td>
+<td>まったくなし</td>
+<td>無視できる確率の分だけ</td>
+</tr>
+<tr>
+<td>鍵の長さ</td>
+<td>平文以上</td>
+<td>短くてよい（128〜256 ビット）</td>
+</tr>
+<tr>
+<td>前提</td>
+<td>なし</td>
+<td>「ある問題が難しい」という仮定</td>
+</tr>
+<tr>
+<td>例</td>
+<td>ワンタイムパッド</td>
+<td>AES、ChaCha20、RSA など現代の暗号すべて</td>
+</tr>
+</tbody>
+</table>
+<p>「効率的」と「無視できる」は、第1回の §7 で用意した物差しそのものです。どちらの緩め方も、現実には痛くありません。宇宙の寿命より長い計算をする攻撃者は心配しなくてよく、2^(−128) の確率で偶然当たることも心配しなくてよいからです。</p>
+<p>その代わり、「ある問題は効率的には解けない」という仮定を信じる必要が出てきます。これが §5 の話題です。</p>
+<div class="sum">
+<ul>
+<li>完全秘匿性には、鍵が平文以上の長さという避けられない限界がある</li>
+<li>「攻撃者は効率的」「漏れは無視できる確率まで許す」の2点を緩めると、短い鍵で長い平文を守れる</li>
+<li>代わりに仮定が必要になる。次の §4 では、緩めた安全性を「ゲーム」として正確に定義する</li>
+</ul>
+</div>
+<h2 id="s4">§4 ゲームによる定義: EAV と IND-CPA</h2>
+<div class="q">
+<p>「効率的な攻撃者には、暗号文からほぼ何も分からない」を、どうやって正確に、検証できる形で書くのか。</p>
+</div>
+<h3 id="41-なぜゲームで書くのか">4.1 なぜゲームで書くのか</h3>
+<p>「何も分からない」を直接定義するのは難しいので、現代暗号は逆向きに考えます。「攻撃者が何かを知ることができるなら、ある簡単な当てっこにも勝てるはずだ」。そこで、その当てっこに勝てないことを安全性の定義にします。</p>
+<p>当てっこは、チャレンジャー（方式を動かす側）と攻撃者の、手順の決まったゲームとして書きます。こうしておくと、「攻撃者は何ができるか」「何をしたら負けか」が、手順として一目で分かるんです。</p>
+<h3 id="42-盗聴者ゲームeav">4.2 盗聴者ゲーム（EAV）</h3>
+<p>最初のゲームは、暗号文を1つ盗み見るだけの攻撃者を想定します。「次へ」で手順を追ってください。</p>
+<figure class="widget" data-widget="eav-game"></figure>
+
+<p>ポイントは、平文を攻撃者自身に選ばせている点です。「攻撃」と「撤退」のように、攻撃者が一番見分けたい2つを選んでも見分けられないなら、どんな平文でも何も漏れていない、と言えます。</p>
+<div class="box def">
+<p><strong>定義（EAV 安全）</strong> どんな PPT の攻撃者 A についても、盗聴者ゲームでの優位性が無視できるとき、方式は EAV 安全であるという。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7487em;"><span style="top:-3.1473em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight" style="margin-right:0.01389em;">eav</span></span></span></span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">A</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.85em;"><span style="top:-2.85em;"><span class="pstrut" style="height:3.2em;"></span><span style="width:0.333em;height:1.200em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.333em" height="1.200em" viewBox="0 0 333 1200"><path d="M145 15 v585 v0 v585 c2.667,10,9.667,15,21,15
+c10,0,16.667,-5,20,-15 v-585 v0 v-585 c-2.667,-10,-9.667,-15,-21,-15
+c-10,0,-16.667,5,-20,15z M188 15 H145 v585 v0 v585 h43z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop">Pr</span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">b</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.85em;"><span style="top:-2.85em;"><span class="pstrut" style="height:3.2em;"></span><span style="width:0.333em;height:1.200em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.333em" height="1.200em" viewBox="0 0 333 1200"><path d="M145 15 v585 v0 v585 c2.667,10,9.667,15,21,15
+c10,0,16.667,-5,20,-15 v-585 v0 v-585 c-2.667,-10,-9.667,-15,-21,-15
+c-10,0,-16.667,5,-20,15z M188 15 H145 v585 v0 v585 h43z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">negl</span></span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+</div>
+<p>1/2 を引いているのは、当てずっぽうでも半分は当たるからです。優位性は「当てずっぽうより、どれだけ上手に当てられるか」を表します。</p>
+<p>完全秘匿性との違いは2点だけです。攻撃者を効率的なものに限ったことと、優位性 0 ではなく「無視できる量」まで許したことです。§3 で決めた2つの緩め方が、そのまま定義に入っています。</p>
+<h3 id="43-選択平文攻撃ゲームind-cpa">4.3 選択平文攻撃ゲーム（IND-CPA）</h3>
+<p>EAV は、同じ鍵で1つしか暗号化しない場面を想定しています。現実には、同じ鍵で大量のメッセージを暗号化しますし、攻撃者が「暗号化される中身」にある程度影響できることもあります。たとえば、Web ブラウザに攻撃者のスクリプトを動かされると、攻撃者が選んだデータを含むリクエストが、正規の鍵で暗号化されて送られます。</p>
+<p>そこで攻撃者に「好きな平文を、同じ鍵で何度でも暗号化してもらえる」能力（暗号化オラクル）を与えます。</p>
+<figure class="widget" data-widget="cpa-game"></figure>
+
+<div class="box def">
+<p><strong>定義（IND-CPA 安全）</strong> 暗号化オラクルを使える、どんな PPT の攻撃者 A についても、上のゲームでの優位性 |Pr[b′ = b] − 1/2| が無視できるとき、方式は IND-CPA 安全であるという。</p>
+</div>
+<h3 id="44-決定的な暗号化はind-cpa-安全になれない">4.4 決定的な暗号化は、IND-CPA 安全になれない</h3>
+<p>IND-CPA から、すぐに1つの重要な結論が出ます。</p>
+<div class="box thm">
+<p><strong>定理</strong> 同じ鍵と同じ平文から、常に同じ暗号文が出る（決定的な）暗号化方式は、IND-CPA 安全ではない。</p>
+</div>
+<p>攻撃は単純です。m₀ を暗号化オラクルに渡して c₀ を得ておき、チャレンジ c<em> と比べます。c</em> = c₀ なら b′ = 0、違えば b′ = 1 と答えれば、必ず勝てます。下の図で、実際に攻撃者として戦ってみてください。方式を切り替えると、同じ攻撃が効かなくなる様子が分かります。</p>
+<figure class="widget" data-widget="ind-game"></figure>
+
+<p>この定理は、実務の大事な指針になります。</p>
+<ul>
+<li>暗号化には、毎回変わる値（ランダムな IV やノンス）が必要</li>
+<li>ECB モード（同じ平文ブロックが同じ暗号文ブロックになる）は、それだけで不合格</li>
+<li>暗号文は平文より少し長くなる（ノンスの分）のが普通で、それは欠陥ではない</li>
+</ul>
+<h3 id="45-攻撃者の能力の階段">4.5 攻撃者の能力の階段</h3>
+<p>攻撃者に与える能力を強くしていくと、安全性の定義も強くなります。</p>
+<table>
+<thead>
+<tr>
+<th>定義</th>
+<th>攻撃者ができること</th>
+<th>現実の場面</th>
+<th>扱う回</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EAV</td>
+<td>暗号文を1つ見る</td>
+<td>一度きりの通信の盗聴</td>
+<td>この回</td>
+</tr>
+<tr>
+<td>IND-CPA</td>
+<td>好きな平文を暗号化させられる</td>
+<td>同じ鍵で大量に暗号化する通信。公開鍵暗号では誰でも暗号化できる</td>
+<td>この回、第3回</td>
+</tr>
+<tr>
+<td>IND-CCA</td>
+<td>さらに、好きな暗号文を復号させられる（チャレンジ自体は除く）</td>
+<td>サーバの「復号エラー」の反応を観察できる（パディングオラクル攻撃）</td>
+<td>第4回、第5回</td>
+</tr>
+</tbody>
+</table>
+<p>下の定義を満たせば、上の定義も自動的に満たします。実務では IND-CCA に相当する安全性（第4回の認証付き暗号）を標準とするのが今の常識です。</p>
+<div class="sum">
+<ul>
+<li>安全性は「攻撃者が勝てないゲーム」として定義する。手順を書くことで、攻撃者の能力と勝利条件がはっきりする</li>
+<li>EAV は盗聴だけ、IND-CPA は暗号化オラクル付き。どちらも「勝率 1/2 + 無視できる量」を超えなければ安全</li>
+<li>決定的な暗号化は IND-CPA を満たせない。だから暗号化には毎回変わる値が要る</li>
+<li>では、IND-CPA を満たす暗号は、どんな仮定のもとで作れるのか。次の §5 で、その仮定の典型である PRG を定義する</li>
+</ul>
+</div>
+<h2 id="s5">§5 疑似乱数生成器: 何を信じるのか</h2>
+<div class="q">
+<p>短い鍵から、長い「ランダムに見える」列を作れれば、ワンタイムパッドの鍵の長さの問題は解ける。その「ランダムに見える」を、どう定義するのか。</p>
+</div>
+<h3 id="51-アイデア-短い種から長い鍵を伸ばす">5.1 アイデア: 短い種から長い鍵を伸ばす</h3>
+<p>§3 で、完全秘匿性の障害は「鍵が平文と同じ長さ必要」なことでした。そこで、短い鍵 s（種）から長いビット列 G(s) を作り、それをワンタイムパッドの鍵の代わりに使うことを考えます。G(s) が本物の乱数と見分けがつかなければ、攻撃者にとっては OTP と変わらないはずです。</p>
+<p>「見分けがつかない」も、§4 と同じくゲームで定義します。見分けようとする側を、識別器（distinguisher）と呼びます。</p>
+<div class="box def">
+<p><strong>定義（疑似乱数生成器、PRG）</strong> 決定的で効率的な関数 G が、n ビットの入力から ℓ(n) &gt; n ビットを出力するとする。どんな PPT の識別器 D についても次の差が無視できるとき、G を PRG という。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.85em;vertical-align:-0.7em;"></span><span class="mord"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.15em;"><span style="top:-3.15em;"><span class="pstrut" style="height:3.8em;"></span><span style="width:0.333em;height:1.800em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.333em" height="1.800em" viewBox="0 0 333 1800"><path d="M145 15 v585 v600 v585 c2.667,10,9.667,15,21,15
+c10,0,16.667,-5,20,-15 v-585 v-600 v-585 c-2.667,-10,-9.667,-15,-21,-15
+c-10,0,-16.667,5,-20,15z M188 15 H145 v585 v600 v585 h43z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.65em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6833em;"><span style="top:-2.4em;margin-left:0em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">s</span></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span><span class="mop">Pr</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7em;"><span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mopen">(</span><span class="mord mathnormal">G</span><span class="mopen">(</span><span class="mord mathnormal">s</span><span class="mclose">))</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.45em;vertical-align:-0.7em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6833em;"><span style="top:-2.4em;margin-left:0em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.02778em;">r</span></span></span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span><span class="mop">Pr</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7em;"><span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.8em;vertical-align:-0.65em;"></span><span class="mord">1</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.15em;"><span style="top:-3.15em;"><span class="pstrut" style="height:3.8em;"></span><span style="width:0.333em;height:1.800em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.333em" height="1.800em" viewBox="0 0 333 1800"><path d="M145 15 v585 v600 v585 c2.667,10,9.667,15,21,15
+c10,0,16.667,-5,20,-15 v-585 v-600 v-585 c-2.667,-10,-9.667,-15,-21,-15
+c-10,0,-16.667,5,-20,15z M188 15 H145 v585 v600 v585 h43z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.65em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">negl</span></span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span></div>
+<p>s は n ビットの一様な種、r は ℓ(n) ビットの一様な乱数。</p>
+</div>
+<p>識別器 D は、渡された列を見て「生成器の出力だと思えば 1」を返します。D が生成器の出力にも本物の乱数にも同じような確率で 1 を返すなら、D は見分けられていません。</p>
+<h3 id="52-prg-でない例と識別器の作り方">5.2 PRG でない例と、識別器の作り方</h3>
+<p>PRG の定義を理解するいちばんの近道は、PRG でない例に識別器を作ってみることです。下の図で生成器とテストを組み合わせ、優位性（2つの確率の差）が大きくなる組を探してください。</p>
+<figure class="widget" data-widget="prg-test"></figure>
+
+<table>
+<thead>
+<tr>
+<th>生成器</th>
+<th>見分け方（識別器）</th>
+<th>優位性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>線形合同法の最下位ビット</td>
+<td>0 と 1 が交互に出るかを見る</td>
+<td>ほぼ 1</td>
+</tr>
+<tr>
+<td>G′(s) = G(s) ‖ G(s)</td>
+<td>前半と後半が一致するかを見る</td>
+<td>1 − 2^(−ℓ)（ほぼ 1）</td>
+</tr>
+<tr>
+<td>1 が 55% 出る生成器</td>
+<td>1 の割合を数える</td>
+<td>長い列ほど 1 に近づく</td>
+</tr>
+<tr>
+<td>ChaCha20 などの暗号用生成器</td>
+<td>知られている効率的な方法はない</td>
+<td>無視できると信じられている</td>
+</tr>
+</tbody>
+</table>
+<p>プログラミング言語の標準の乱数（Java の java.util.Random、Python の random など）は、統計的にはきれいに見えても、出力をいくつか観察すると内部状態が復元できるので PRG ではありません。暗号には、OS の乱数（/dev/urandom、getrandom）や SecureRandom など、暗号用の生成器を使います。</p>
+<h3 id="53-prg-は本当に存在するのか">5.3 PRG は本当に存在するのか</h3>
+<p>実は、PRG が存在することは証明されていません。証明できれば P ≠ NP も証明されてしまうからです。分かっているのは、「一方向関数（計算は簡単だが逆算が難しい関数）が存在するなら、PRG も存在する」という定理です（Håstad・Impagliazzo・Levin・Luby）。</p>
+<p>そこで実務では、「AES や ChaCha20 から作った生成器は PRG として振る舞う」と仮定します。何十年もの解析に耐えてきたことが、その仮定の根拠です。この「何を信じるか」をはっきりさせることが、§6 の証明の出発点になります。</p>
+<div class="sum">
+<ul>
+<li>PRG は、短い種から作った長い列が、効率的な識別器には本物の乱数と見分けられないもの</li>
+<li>PRG でないことは、優位性の大きい識別器を1つ作れば示せる</li>
+<li>PRG の存在は証明されておらず、AES や ChaCha20 がそうであると「仮定」する</li>
+<li>次の §6 で、この仮定から「G(s) を鍵にした OTP は安全」を証明する。それが帰着という方法</li>
+</ul>
+</div>
+<h2 id="s6">§6 帰着による証明: 仮定から安全性を導く</h2>
+<div class="q">
+<p>「G が PRG なら、G(s) ⊕ m という暗号は EAV 安全だ」を、どうやって証明するのか。</p>
+</div>
+<h3 id="61-証明したいこと">6.1 証明したいこと</h3>
+<p>方式を1つ決めます。</p>
+<div class="box def">
+<p><strong>方式 Π（疑似ワンタイムパッド）</strong> 鍵は n ビットの s。Enc(s, m) = G(s) ⊕ m、Dec(s, c) = G(s) ⊕ c。</p>
+</div>
+<div class="box thm">
+<p><strong>定理</strong> G が PRG なら、Π は EAV 安全である。</p>
+</div>
+<h3 id="62-帰着の考え方-対偶で部品として使う">6.2 帰着の考え方: 対偶で、部品として使う</h3>
+<p>「どんな攻撃者も勝てない」を直接示すのは大変です。どんな攻撃者がいるか、すべてを把握できないからです。そこで対偶を示します。</p>
+<blockquote>
+<p>Π を破る攻撃者 A がいたら、それを部品として使って、G を見分ける識別器 D を作れる。</p>
+</blockquote>
+<p>G は PRG だと仮定しているので、そんな D は存在しないはずです。だから A も存在しない、という論法です。A の中身を知る必要はなく、「呼び出せば答えを返す箱」として使うだけなのがポイントです。この「A を使って D を作る」ことを帰着（reduction）と呼びます。</p>
+<h3 id="63-識別器-d-の組み立て">6.3 識別器 D の組み立て</h3>
+<p>D は外から y を受け取ります。y は G(s) か本物の乱数のどちらかで、D はそれを当てたい。D は自分の中で、A のために盗聴者ゲームを演じます。「次へ」で手順を追ってください。</p>
+<figure class="widget" data-widget="reduction"></figure>
+
+<h3 id="64-d-の優位性を計算する">6.4 D の優位性を計算する</h3>
+<p>D がどれくらい上手に見分けられるかを、y の2つの場合に分けて計算します。</p>
+<table>
+<thead>
+<tr>
+<th>y の正体</th>
+<th>A に渡した c* = y ⊕ m_b は</th>
+<th>A の勝率 Pr[b′ = b]</th>
+<th>D が 1 を返す確率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G(s)（PRG の出力）</td>
+<td>本物の Π の暗号文</td>
+<td>1/2 + ε（ε は A の優位性）</td>
+<td>1/2 + ε</td>
+</tr>
+<tr>
+<td>一様な乱数 r</td>
+<td>本物のワンタイムパッドの暗号文</td>
+<td>ちょうど 1/2（OTP は完全秘匿）</td>
+<td>1/2</td>
+</tr>
+</tbody>
+</table>
+<p>2つの差がそのまま D の優位性です。</p>
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7487em;"><span style="top:-3.1473em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight" style="margin-right:0.01389em;">prg</span></span></span></span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size1">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal">ε</span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size1">)</span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.1901em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord"><span class="mord mathrm" style="margin-right:0.01389em;">Adv</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.7487em;"><span style="top:-2.453em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">Π</span></span></span></span><span style="top:-3.1473em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathrm mtight" style="margin-right:0.01389em;">eav</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">A</span><span class="mclose">)</span></span></span></span></span></div>
+
+<p>D は A を1回呼び出し、XOR を1回するだけなので、A が効率的なら D も効率的です。G は PRG なので、効率的な D の優位性は無視できます。したがって A の優位性 ε も無視できます。これで定理が示せました。</p>
+<p>ここが帰着のいちばん大事な点で、表の2行目で「本物の乱数なら OTP になる」ことを使っています。§2 で示した完全秘匿性が、ここで部品として効いてくるんです。</p>
+<h3 id="65-証明の型としてまとめる">6.5 証明の型としてまとめる</h3>
+<p>この先の証明は、ほとんどこの型で書かれます。</p>
+<table>
+<thead>
+<tr>
+<th>手順</th>
+<th>内容</th>
+<th>上の例では</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. 対偶を取る</td>
+<td>方式を破る A がいると仮定する</td>
+<td>Π の EAV ゲームで優位性 ε の A</td>
+</tr>
+<tr>
+<td>2. 箱として使う</td>
+<td>仮定のゲームに参加する D を作り、中で A を呼ぶ</td>
+<td>y を受け取り、c* = y ⊕ m_b を A に渡す</td>
+</tr>
+<tr>
+<td>3. 場合分け</td>
+<td>仮定の「本物」の側と「理想」の側で、A の振る舞いを計算する</td>
+<td>G(s) なら現実の方式、乱数なら OTP</td>
+</tr>
+<tr>
+<td>4. 優位性をつなぐ</td>
+<td>D の優位性を A の優位性で表す</td>
+<td>Adv(D) = ε</td>
+</tr>
+<tr>
+<td>5. 効率を確認</td>
+<td>D が効率的であることを確かめる</td>
+<td>A を1回呼ぶだけ</td>
+</tr>
+</tbody>
+</table>
+<h3 id="66-ハイブリッド論法-少しずつ置き換える">6.6 ハイブリッド論法: 少しずつ置き換える</h3>
+<p>もう1つよく使う型が、ハイブリッド論法です。たとえば、G が PRG のとき、独立な2つの種でつないだ G₂(s₁, s₂) = G(s₁) ‖ G(s₂) も PRG であることを示したいとします。いきなり「全部本物」と「全部乱数」を比べるのではなく、1か所ずつ置き換えた中間の分布（ハイブリッド）を並べます。</p>
+<table>
+<thead>
+<tr>
+<th>分布</th>
+<th>前半</th>
+<th>後半</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>H₀（現実）</td>
+<td>G(s₁)</td>
+<td>G(s₂)</td>
+</tr>
+<tr>
+<td>H₁（中間）</td>
+<td>乱数 r₁</td>
+<td>G(s₂)</td>
+</tr>
+<tr>
+<td>H₂（理想）</td>
+<td>乱数 r₁</td>
+<td>乱数 r₂</td>
+</tr>
+</tbody>
+</table>
+<p>H₀ と H₂ を優位性 ε で見分ける識別器があれば、隣り合うどちらかの組（H₀ と H₁、または H₁ と H₂）を、少なくとも ε/2 の優位性で見分けられます。隣り合う2つは1か所しか違わないので、その識別器は G 1個を見分ける識別器に作り直せます。G が PRG なので ε/2 は無視でき、ε も無視できる、という流れです。置き換える箇所が多項式個でも、同じ議論で ε ≤（箇所の数）×（1か所の優位性）となり、無視できるままです（第1回 §7.4 の閉包性）。</p>
+<h3 id="67-この方式の限界と次回へのつなぎ">6.7 この方式の限界と、次回へのつなぎ</h3>
+<p>Π は EAV 安全ですが、§4.4 の定理により IND-CPA 安全ではありません。同じ鍵 s からは同じ G(s) が出るので、決定的だからです。同じ鍵で何度も暗号化するには、毎回違う「位置」から鍵の列を取り出せる仕組みが必要です。それが、入力ごとに違う疑似乱数を返す疑似ランダム関数（PRF）と、それを使った CTR モードで、第3回のテーマです。</p>
+<div class="sum">
+<ul>
+<li>帰着は「方式を破る A がいれば、仮定を破る D が作れる」を示す証明の型。A は中身を知らない箱として使う</li>
+<li>鍵になる計算は、仮定の「本物」と「理想」の2つの場合での、A の勝率の差</li>
+<li>ハイブリッド論法は、1か所ずつ置き換えて差を足し合わせる型</li>
+<li>疑似 OTP は EAV 安全だが IND-CPA 安全ではない。同じ鍵で何度も暗号化するには PRF が要る（第3回）</li>
+</ul>
+</div>
+<h2 id="s7">§7 安全性の主張を読む</h2>
+<div class="q">
+<p>仕様書や論文の「この方式は安全だ」という主張を見たとき、実務者は何を確認すればよいのか。</p>
+</div>
+<p>ここまでの内容を、主張を読むときのチェックリストにまとめます。</p>
+<table>
+<thead>
+<tr>
+<th>確認すること</th>
+<th>問い</th>
+<th>例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>攻撃者の能力</td>
+<td>盗聴だけか、暗号化・復号を頼めるか</td>
+<td>IND-CPA なのか IND-CCA なのか</td>
+</tr>
+<tr>
+<td>安全性の目標</td>
+<td>何を守る主張か（秘匿、改ざん検知、なりすまし防止）</td>
+<td>秘匿性だけの主張なら、改ざんは防げない</td>
+</tr>
+<tr>
+<td>仮定</td>
+<td>何を信じているか</td>
+<td>「AES が PRP なら」「RSA 問題が難しいなら」「ランダムオラクルモデルで」</td>
+</tr>
+<tr>
+<td>使用条件</td>
+<td>どんな条件で成り立つか</td>
+<td>ノンスが重複しない、同じ鍵での暗号化量が上限以下</td>
+</tr>
+<tr>
+<td>具体的な数</td>
+<td>攻撃者の手間と成功確率の上限はどれくらいか</td>
+<td>優位性 ≤ q²/2^128 など。帰着で失う分（緩さ）も含む</td>
+</tr>
+</tbody>
+</table>
+<p>この5つで、実在の主張を読んでみます。</p>
+<table>
+<thead>
+<tr>
+<th>主張</th>
+<th>攻撃者</th>
+<th>目標</th>
+<th>仮定</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CTR モードは IND-CPA 安全</td>
+<td>暗号化オラクル</td>
+<td>秘匿性</td>
+<td>ブロック暗号が PRF（PRP）</td>
+<td>カウンタが重複しない</td>
+</tr>
+<tr>
+<td>AES-GCM は認証付き暗号として安全</td>
+<td>暗号化・復号オラクル</td>
+<td>秘匿性と改ざん検知</td>
+<td>AES が PRP</td>
+<td>ノンスが重複しない、メッセージ数とサイズに上限</td>
+</tr>
+<tr>
+<td>RSA-OAEP は IND-CCA 安全</td>
+<td>復号オラクル</td>
+<td>秘匿性</td>
+<td>RSA 問題の困難性、ランダムオラクルモデル</td>
+<td>正しいパディング検査の実装</td>
+</tr>
+</tbody>
+</table>
+<p>実務の事故の多くは、5つ目の「使用条件」を破ったときに起きます。証明は条件の内側でしか何も言っていないので、ノンスの重複のように条件の外に出た瞬間、どんな証明も守ってくれません。第3回以降、各方式の「条件」を必ず確認していきます。</p>
+<div class="sum">
+<ul>
+<li>安全性の主張は「攻撃者の能力」「目標」「仮定」「使用条件」「具体的な数」の5つに分解して読む</li>
+<li>証明は使用条件の内側でしか成り立たない。実装の事故の多くは条件違反から起きる</li>
+</ul>
+</div>
+<h2 id="この回のまとめ">この回のまとめ</h2>
+<p>冒頭の一文に戻ります。</p>
+<blockquote>
+<p>CTR モードは、ブロック暗号が疑似ランダム関数であれば、IND-CPA 安全である。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>部品</th>
+<th>意味</th>
+<th>節</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IND-CPA 安全</td>
+<td>好きな平文を暗号化させられる効率的な攻撃者でも、選んだ2つの平文のどちらが暗号化されたかを、当てずっぽうより無視できる量しか上手に当てられない</td>
+<td>§4</td>
+</tr>
+<tr>
+<td>疑似ランダム関数であれば</td>
+<td>PRG と同じく「効率的には本物の乱数と見分けられない」という仮定（PRF は第3回）</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>〜であれば、〜である</td>
+<td>CTR を破る攻撃者がいれば、ブロック暗号を見分ける識別器が作れる、という帰着</td>
+<td>§6</td>
+</tr>
+</tbody>
+</table>
+<h2 id="演習問題">演習問題</h2>
+<h3 id="a-確認">A. 確認</h3>
+<ol>
+<li>ケルクホフスの原理を一文で述べ、方式を秘密にする方針が実務でうまくいかない理由を2つ挙げよ</li>
+<li>2 ビットの平文を、2 ビットの一様な鍵によるワンタイムパッドで暗号化する。平文が 00 である事前確率が 1/2、ほかの3つが各 1/6 のとき、暗号文 11 を見たあとの「平文が 00 である確率」を求めよ</li>
+<li>鍵を 1 ビットだけ短くした「n − 1 ビットの鍵で n ビットの平文を守る」方式は、完全秘匿になりうるか。理由とともに答えよ</li>
+<li>EAV と IND-CPA の違いを、攻撃者ができることの違いとして説明せよ</li>
+</ol>
+<h3 id="b-証明攻撃">B. 証明・攻撃</h3>
+<ol start="5">
+<li>決定的な暗号化が IND-CPA 安全でないことを、攻撃者の手順と勝率を明示して示せ</li>
+<li>G が PRG のとき、G′(s) = G(s) ‖ G(s) が PRG でないことを、識別器を作って示せ。優位性も計算せよ</li>
+<li>G が PRG のとき、G(s) の最初の1ビットを捨てた列 G″(s) も PRG であることを、帰着で示せ（ℓ(n) − 1 &gt; n とする）</li>
+<li>ECB モード（各ブロックを独立に同じ鍵で暗号化）が EAV 安全でもないことを示せ（ヒント: m₀ = 2ブロックの同じ値、m₁ = 2ブロックの異なる値）</li>
+</ol>
+<h3 id="c-実装">C. 実装</h3>
+<ol start="9">
+<li>英文を自分で用意し、シーザー暗号を頻度分析（χ² 最小）で解読するプログラムを書け</li>
+<li>IND-CPA ゲームをコードで書き、決定的な方式と、ランダムな r を使う方式で、定番の攻撃の勝率を 10,000 回ずつ測れ</li>
+<li>ワンタイムパッドの鍵を再利用した2つの英文暗号文から、クリブを使って両方の平文を復元せよ（Cryptopals Set 1 の問題 6 にも挑戦するとよい）</li>
+</ol>
+<h2 id="解答と解説">解答と解説</h2>
+<h3 id="a-確認_1">A. 確認</h3>
+<ol>
+<li>方式は公開されても、鍵だけが秘密なら安全であるべき。理由: 方式は実装や配布で必ず漏れる／漏れたときに全員の方式を作り直すのは現実的でない／公開して専門家に解析させたほうが弱点が早く見つかる、のうち2つ</li>
+<li>暗号文 11 は、どの平文からも確率 1/4 で出る（OTP なので）。ベイズの定理より Pr[00 | 11] = (1/2 · 1/4) / (1/4) = 1/2。事前確率と同じで、何も漏れていない</li>
+<li>なりえない。シャノンの定理より |K| ≥ |M| が必要で、2^(n−1) &lt; 2^n だから。具体的には、ある暗号文をすべての鍵で復号しても、出てくる平文は 2^(n−1) 個以下で、出てこない平文が残る</li>
+<li>EAV は暗号文を1つ見るだけ。IND-CPA はそれに加えて、好きな平文を同じ鍵で何度でも暗号化させられる</li>
+</ol>
+<h3 id="b-証明攻撃_1">B. 証明・攻撃</h3>
+<ol start="5">
+<li>攻撃者は、任意の m₀ ≠ m₁ を選ぶ。チャレンジの前（または後）に m₀ を暗号化オラクルに渡して c₀ を得る。チャレンジ c<em> を受け取り、c</em> = c₀ なら b′ = 0、そうでなければ b′ = 1 と答える。決定的なので b = 0 のとき必ず c<em> = c₀、b = 1 のときは（正しく復号できる方式なので）c</em> ≠ c₀。よって勝率 1、優位性 1/2</li>
+<li>識別器 D: 入力の前半と後半が一致すれば 1 を返す。G′(s) なら必ず一致するので確率 1。一様な乱数 r なら、後半が前半と一致する確率は 2^(−ℓ(n))。優位性は 1 − 2^(−ℓ(n)) で、無視できない</li>
+<li>G″ を見分ける D″ があるとする。G を見分ける D を作る: 入力 y の最初の1ビットを捨てて D″ に渡し、その答えを返す。y = G(s) なら D″ に渡るのは G″(s)、y が一様なら一様な乱数（1ビット短い）。よって Adv(D) = Adv(D″)。G が PRG なので無視できる</li>
+<li>m₀ = (x, x)、m₁ = (x, y)（x ≠ y）を送る。ECB では同じ平文ブロックは同じ暗号文ブロックになるので、c* の2つのブロックが一致すれば b′ = 0、異なれば b′ = 1。勝率 1。暗号文を1つ見るだけで勝てるので、EAV 安全ですらない</li>
+</ol>
+<h3 id="c-実装のポイント">C. 実装のポイント</h3>
+<ul>
+<li>問題9: 短い文章ほど頻度が英語からずれて失敗しやすくなります。何文字くらいあれば安定して解けるか測ってみてください</li>
+<li>問題10: ランダムな r が 16 ビットだと、r が偶然重なる確率（第1回の誕生日の確率）が無視できなくなります。r を短くすると勝率がどう変わるかも観察すると、第3回の内容への準備になります</li>
+<li>問題11: 英文ではスペースと英字の XOR が特徴的な値（英字の大文字と小文字が入れ替わる）になるので、スペースの位置から推測を始めるのが定番です</li>
+</ul>
+<h2 id="読む">読む</h2>
+<ul>
+<li>Katz &amp; Lindell, Introduction to Modern Cryptography: 序論、完全秘匿性、計算量的に安全な暗号化の各章</li>
+<li>Rosulek, The Joy of Cryptography（無料）: OTP、安全性の定義、PRG、ハイブリッド論法の章。証明の型がいちばん平易に学べる</li>
+<li>Boneh &amp; Shoup, A Graduate Course in Applied Cryptography（無料）: ストリーム暗号と、意味的安全性の章</li>
+</ul>
+<h3 id="次回予告-第3回-共通鍵暗号">次回予告: 第3回 共通鍵暗号</h3>
+<p>この回の最後に、「同じ鍵で何度も暗号化するには、毎回違う疑似乱数を引き出せる仕組みが要る」という課題が残りました。次回は、その仕組みである疑似ランダム関数（PRF）と疑似ランダム置換（PRP）を定義し、それを実現するブロック暗号 AES の中身と、CBC・CTR などの運用モードを扱います。</p>
 
 <nav class="pager" aria-label="前後の回"><a class="pager-prev" href="01-math-foundations.html"><small>前の回</small>第1回 数学的基盤</a><a class="pager-next" href="03-symmetric.html"><small>次の回</small>第3回 共通鍵暗号</a></nav>
 </article>
@@ -86,6 +756,7 @@
 <p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
 </div></footer>
 <script src="../assets/widgets.js" defer></script>
+<script src="../assets/w/lec02.js" defer></script>
 <script src="../assets/site.js" defer></script>
 </body>
 </html>
