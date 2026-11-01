@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>第4回 ハッシュ・MAC・AEAD | Cipher Elements</title>
-<meta name="description" content="機密性だけでは不十分で、改ざん検知まで含めた AEAD（認証付き暗号）を標準にするのが現代の実務です。">
+<meta name="description" content="暗号化だけでは防げない「改ざん」を検知するために、ハッシュ関数と MAC を学び、暗号化との正しい組み合わせ方を経て、現代の標準である認証付き暗号（AEAD）にたどり着く回。パディングオラクル攻撃を実演する。">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <link rel="stylesheet" href="../assets/site.css">
 </head>
 <body class="page-lecture" data-page="lectures/04-hash-mac-aead.html">
@@ -32,48 +32,830 @@
 <main class="doc">
 <div class="doc-grid">
 <header class="doc-head">
-<div class="eyebrow">Step 4 · 7週<span class="chip chip-planned">準備中</span></div>
+<div class="eyebrow">Step 4 · 7週<span class="chip chip-published">公開中</span></div>
 <h1>第4回 ハッシュ・MAC・AEAD</h1>
-<p class="doc-lead">機密性だけでは不十分で、改ざん検知まで含めた AEAD（認証付き暗号）を標準にするのが現代の実務です。</p>
+<p class="doc-lead">暗号化だけでは防げない「改ざん」を検知するために、ハッシュ関数と MAC を学び、暗号化との正しい組み合わせ方を経て、現代の標準である認証付き暗号（AEAD）にたどり着く回。パディングオラクル攻撃を実演する。</p>
 </header>
-
+<aside class="toc"><details open><summary>目次</summary><ol><li><a href="#この回の地図">この回の地図</a></li><li><a href="#s1">§1 改ざん検知に何が要るか</a></li><li><a href="#s2">§2 ハッシュ関数: どんなデータも短く要約する</a></li><li><a href="#s3">§3 長さ拡張攻撃: 素朴な MAC の失敗</a></li><li><a href="#s4">§4 MAC: 鍵付きの改ざん検知</a></li><li><a href="#s5">§5 暗号化と MAC の組み合わせ: 順序とパディングオラクル</a></li><li><a href="#s6">§6 AEAD: 秘匿と改ざん検知を1つにまとめる</a></li><li><a href="#s7">§7 KDF とパスワード: 鍵を作る</a></li><li><a href="#この回のまとめ">この回のまとめ</a></li><li><a href="#演習問題">演習問題</a></li><li><a href="#解答と解説">解答と解説</a></li><li><a href="#読む">読む</a></li></ol></details></aside>
 <article class="prose">
-<div class="notice">この回の講義資料は準備中です。下は学習ガイドから抜き出したシラバスで、講義資料が公開されるとこのページが置き換わります。</div>
-
-<p>この Step は共通鍵の仕上げで、同時にパディングオラクルなど実攻撃の理解に直結します。</p>
-<h3 id="学ぶこと">学ぶこと</h3>
-<ul>
-<li>ハッシュ関数の3要件: 原像困難性、第二原像困難性、衝突困難性。誕生日攻撃により n ビット出力の衝突耐性は約 n/2 ビット</li>
-<li>Merkle-Damgård 構造（MD5、SHA-1、SHA-2）: 長さ拡張攻撃が可能で、H(k || m) は MAC として使えない。SHA-1 では衝突が実際に作られている</li>
-<li>スポンジ構造（SHA-3 / Keccak）: capacity により長さ拡張が構造上起きない</li>
-<li>MAC と EUF-CMA: HMAC の構成と安全性、CBC-MAC が可変長メッセージで破れる理由と CMAC による修正</li>
-<li>Carter-Wegman 型 MAC: GHASH、Poly1305 はユニバーサル性を持つハッシュで長いメッセージを圧縮し、短い値だけを暗号化して高速化する発想</li>
-<li>暗号化と認証の合成順序: Encrypt-then-MAC が安全で、MAC-then-Encrypt は padding oracle や Lucky13 の温床になる</li>
-<li>AEAD: AES-GCM、ChaCha20-Poly1305、AES-GCM-SIV（ノンス誤用耐性）。関連データ（AD）の役割</li>
-<li>KDF とパスワード: HKDF（extract-then-expand）、PBKDF2、bcrypt、scrypt、Argon2 とメモリハード関数の発想</li>
-<li>乱数: CSPRNG、OS の乱数源（getrandom）、乱数不良が鍵全体を壊す実例</li>
-</ul>
-<h3 id="読む">読む</h3>
-<ul>
-<li>Katz &amp; Lindell: ハッシュ関数と MAC の各章</li>
-<li>Boneh &amp; Shoup: メッセージ完全性、認証付き暗号の章</li>
-<li>論文: Bellare &amp; Namprempre (2000) と Krawczyk (2001) は合成順序の議論の原典。どちらも短く読める</li>
-<li>一次資料: RFC 2104（HMAC）、RFC 5869（HKDF）、NIST SP 800-38D（GCM）、FIPS 202（SHA-3）、RFC 8439</li>
-</ul>
-<h3 id="手を動かす">手を動かす</h3>
-<ol>
-<li>SHA-256 に対する長さ拡張攻撃で、H(k || m) 型の MAC を偽造する（Cryptopals Set 4 に類題あり）</li>
-<li>HMAC を標準ライブラリを使わず自作し、RFC のテストベクタと照合する。定数時間比較も実装する</li>
-<li>AES-GCM でノンスを再利用した2つの暗号文から、認証鍵 H が復元できることを確認する（選択課題。多項式の根を求める発想）</li>
-<li>Argon2 のメモリ・反復パラメータを変え、自分の環境で1回あたりの所要時間を測る</li>
+<h2 id="この回の地図">この回の地図</h2>
+<div class="map">
+<p><span class="map-label">この回で答える問い</span></p>
+<p class="lead-q">暗号文が途中で書き換えられていないことを、どうやって保証するのか。</p>
+<p>第3回の §4.4 で、CBC の暗号文を鍵なしで書き換えられることを見ました。暗号化は「中身を読まれない」ことしか守らず、「中身を変えられない」ことは別の道具で守る必要があります。この回は、その道具を材料から順に組み立て、最後に両方を1つにまとめた完成形へ進みます。</p>
+<table>
+<thead>
+<tr>
+<th>段階</th>
+<th>問い</th>
+<th>答え</th>
+<th>節</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>要件</td>
+<td>改ざん検知には何が必要か</td>
+<td>鍵を持つ人だけが作れる「しるし」</td>
+<td>§1</td>
+</tr>
+<tr>
+<td>材料</td>
+<td>どんなデータも短く要約する安全な方法は</td>
+<td>ハッシュ関数</td>
+<td>§2</td>
+</tr>
+<tr>
+<td>落とし穴</td>
+<td>ハッシュに鍵を混ぜるだけではだめなのか</td>
+<td>長さ拡張攻撃</td>
+<td>§3</td>
+</tr>
+<tr>
+<td>道具</td>
+<td>鍵付きの改ざん検知をどう作るか</td>
+<td>MAC と HMAC</td>
+<td>§4</td>
+</tr>
+<tr>
+<td>組み立て</td>
+<td>暗号化と MAC をどう組み合わせるか</td>
+<td>Encrypt-then-MAC。順序を誤るとパディングオラクル</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>完成形</td>
+<td>両方を1つにまとめた標準は</td>
+<td>AEAD（AES-GCM、ChaCha20-Poly1305）</td>
+<td>§6</td>
+</tr>
+<tr>
+<td>応用</td>
+<td>鍵やパスワードからの鍵の作り方</td>
+<td>HKDF、パスワードハッシュ</td>
+<td>§7</td>
+</tr>
+</tbody>
+</table>
+<ol class="roadmap">
+<li><small>§1</small><b><a href="#s1">何が要るか</a></b><span>改ざん検知の要件</span></li>
+<li><small>§2</small><b><a href="#s2">ハッシュ</a></b><span>3つの安全性</span></li>
+<li><small>§3</small><b><a href="#s3">長さ拡張</a></b><span>素朴な MAC の失敗</span></li>
+<li><small>§4</small><b><a href="#s4">MAC</a></b><span>定義と HMAC</span></li>
+<li><small>§5</small><b><a href="#s5">組み合わせ</a></b><span>順序とパディングオラクル</span></li>
+<li><small>§6</small><b><a href="#s6">AEAD</a></b><span>現代の標準</span></li>
+<li><small>§7</small><b><a href="#s7">KDF</a></b><span>鍵とパスワード</span></li>
 </ol>
-<h3 id="到達チェック">到達チェック</h3>
+</div>
+<p>この回の結論を先に言うと、「通信やデータの暗号化には AEAD を使い、ノンスを重複させない。自分で暗号化と MAC を組み合わせるなら Encrypt-then-MAC。MAC の検証は定数時間で比較する」です。§5 のパディングオラクル攻撃は、順序を誤ったときに何が起きるかを実感するための節です。</p>
+<h3 id="到達目標">到達目標</h3>
 <ul>
+<li>ハッシュ関数の3つの安全性を区別し、それぞれの一般的な攻撃の手間を言える</li>
 <li>長さ拡張攻撃の仕組みと、HMAC がそれを防ぐ理由を説明できる</li>
-<li>Encrypt-then-MAC が安全で MAC-then-Encrypt が危うい理由を、攻撃者が観測できる情報の違いで説明できる</li>
-<li>GCM のノンス再利用が「機密性」だけでなく「認証」まで壊す理由を言える</li>
-<li>ユースケースごと（通信、ディスク、パスワード保存、鍵導出）に使うべき関数を選べる</li>
+<li>MAC の安全性（EUF-CMA）をゲームとして説明できる</li>
+<li>暗号化と MAC の3つの組み合わせ方を比べ、パディングオラクル攻撃の原理を説明できる</li>
+<li>AEAD のノンスの条件と、重複したときに何が壊れるかを説明できる</li>
+<li>用途に応じて HKDF とパスワードハッシュ（Argon2 など）を使い分けられる</li>
 </ul>
+<table>
+<thead>
+<tr>
+<th>節</th>
+<th>内容</th>
+<th>目安</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§1</td>
+<td>改ざん検知の要件</td>
+<td>4分</td>
+</tr>
+<tr>
+<td>§2</td>
+<td>ハッシュ関数</td>
+<td>8分</td>
+</tr>
+<tr>
+<td>§3</td>
+<td>長さ拡張攻撃</td>
+<td>7分</td>
+</tr>
+<tr>
+<td>§4</td>
+<td>MAC と HMAC</td>
+<td>8分</td>
+</tr>
+<tr>
+<td>§5</td>
+<td>組み合わせとパディングオラクル</td>
+<td>13分</td>
+</tr>
+<tr>
+<td>§6</td>
+<td>AEAD</td>
+<td>10分</td>
+</tr>
+<tr>
+<td>§7</td>
+<td>KDF とパスワード</td>
+<td>6分</td>
+</tr>
+</tbody>
+</table>
+<h2 id="s1">§1 改ざん検知に何が要るか</h2>
+<div class="q">
+<p>受け取ったデータが途中で書き換えられていないと確かめるには、どんな仕組みが必要か。チェックサムやハッシュ値を添えるだけでは足りないのか。</p>
+</div>
+<p>データに「しるし」を添えて送り、受け取った側がしるしを確かめる、という形はどれも同じです。違うのは、そのしるしを誰が作れるかです。</p>
+<table>
+<thead>
+<tr>
+<th>しるし</th>
+<th>作れる人</th>
+<th>守れるもの</th>
+<th>守れないもの</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CRC などのチェックサム</td>
+<td>誰でも</td>
+<td>偶然の誤り（ノイズ）</td>
+<td>意図的な改ざん。攻撃者はデータを変えてチェックサムも計算し直せる</td>
+</tr>
+<tr>
+<td>ハッシュ値（SHA-256 など）</td>
+<td>誰でも</td>
+<td>別経路で正しいハッシュ値が届くなら、その一致</td>
+<td>ハッシュ値と一緒に送ると、攻撃者は両方を差し替えられる</td>
+</tr>
+<tr>
+<td>MAC（この回）</td>
+<td>鍵を共有する人だけ</td>
+<td>意図的な改ざん、なりすまし</td>
+<td>送信者と受信者のどちらが作ったか（両方とも鍵を持つ）</td>
+</tr>
+<tr>
+<td>デジタル署名（第6回）</td>
+<td>秘密鍵を持つ1人だけ</td>
+<td>意図的な改ざん、第三者への証明</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>攻撃者が計算し直せないしるしには、鍵が要ります。この回の主役は、共通鍵で作るしるし、MAC です。その材料として、まずハッシュ関数を押さえます。</p>
+<div class="sum">
+<ul>
+<li>改ざん検知のしるしは、攻撃者が計算し直せないもの、つまり鍵を持つ人だけが作れるものでなければならない</li>
+<li>共通鍵で作るしるしが MAC、秘密鍵で作るしるしが署名（第6回）</li>
+<li>次の §2 では MAC の材料になるハッシュ関数と、その安全性の定義を見る</li>
+</ul>
+</div>
+<h2 id="s2">§2 ハッシュ関数: どんなデータも短く要約する</h2>
+<div class="q">
+<p>「安全なハッシュ関数」とは、具体的にどんな攻撃に耐えるものなのか。それぞれの攻撃にはどれくらいの手間がかかるのか。</p>
+</div>
+<h3 id="21-3つの安全性">2.1 3つの安全性</h3>
+<p>ハッシュ関数 H は、任意の長さのデータを固定長（SHA-256 なら 256 ビット）に要約します。入力のほうが圧倒的に多いので、同じ出力になる入力の組は必ず存在します。安全とは、それを「見つけられない」ことです。何を与えられて何を探すかで、3つの安全性に分かれます。</p>
+<table>
+<thead>
+<tr>
+<th>安全性</th>
+<th>攻撃者に与えるもの</th>
+<th>攻撃者が探すもの</th>
+<th>一般的な攻撃の手間（n ビット出力）</th>
+<th>必要になる場面</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>原像困難性</td>
+<td>出力 y</td>
+<td>H(x) = y となる x</td>
+<td>2^n</td>
+<td>パスワードの保存、コミットメント</td>
+</tr>
+<tr>
+<td>第二原像困難性</td>
+<td>入力 x</td>
+<td>H(x′) = H(x) となる別の x′</td>
+<td>2^n</td>
+<td>ファイルの改ざん検知（元のファイルは決まっている）</td>
+</tr>
+<tr>
+<td>衝突困難性</td>
+<td>なし</td>
+<td>H(x) = H(x′) となる任意の組</td>
+<td>2^(n/2)（誕生日攻撃）</td>
+<td>署名（第6回）、証明書</td>
+</tr>
+</tbody>
+</table>
+<p>衝突は、探す側が両方の入力を自由に選べるので、第1回 §6 の誕生日の確率から約 2^(n/2) で見つかります。原像は狙った1つの値を当てる必要があるので、2^n かかります。この差を、下の図で実際に計算して確かめてください。</p>
+<figure class="widget" data-widget="hash-search"></figure>
+
+<h3 id="22-現在の状況">2.2 現在の状況</h3>
+<table>
+<thead>
+<tr>
+<th>ハッシュ関数</th>
+<th>出力</th>
+<th>衝突困難性の現状</th>
+<th>実務での扱い</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MD5</td>
+<td>128 ビット</td>
+<td>2004年に衝突が発見され、今は数秒で作れる。偽の証明書の作成にも使われた</td>
+<td>安全性が必要な用途では使用禁止</td>
+</tr>
+<tr>
+<td>SHA-1</td>
+<td>160 ビット</td>
+<td>2017年に実際の衝突（SHAttered）、2020年に選択プレフィックス衝突</td>
+<td>署名や証明書では使用禁止</td>
+</tr>
+<tr>
+<td>SHA-256、SHA-512（SHA-2）</td>
+<td>256、512 ビット</td>
+<td>知られた有効な攻撃なし</td>
+<td>標準。ただし §3 の長さ拡張に注意</td>
+</tr>
+<tr>
+<td>SHA-3（Keccak）</td>
+<td>224〜512 ビット</td>
+<td>知られた有効な攻撃なし</td>
+<td>SHA-2 とは別の構造（スポンジ）の標準</td>
+</tr>
+</tbody>
+</table>
+<p>衝突困難性が先に崩れ、原像困難性はずっと後まで残る、というのが歴史のパターンです。MD5 や SHA-1 でも、原像を実用的に求める方法はまだありません。</p>
+<div class="sum">
+<ul>
+<li>ハッシュの安全性は、原像・第二原像・衝突の3つ。衝突だけ手間が 2^(n/2) と小さい</li>
+<li>MD5 と SHA-1 は衝突が実際に作られ、署名などには使えない。標準は SHA-2 と SHA-3</li>
+<li>では、ハッシュに鍵を混ぜれば MAC になるのか。次の §3 で、素朴なやり方が失敗する例を見る</li>
+</ul>
+</div>
+<h2 id="s3">§3 長さ拡張攻撃: 素朴な MAC の失敗</h2>
+<div class="q">
+<p>鍵を前に付けてハッシュを取る H(鍵 ‖ メッセージ) は、鍵を知らない人には作れない「しるし」になるか。</p>
+</div>
+<h3 id="31-sha-2-の作り-merkle-damgård-構造">3.1 SHA-2 の作り: Merkle-Damgård 構造</h3>
+<p>MD5、SHA-1、SHA-2 は、同じ設計（Merkle-Damgård 構造）でできています。メッセージを 64 バイトずつのブロックに区切り、圧縮関数 f で内部状態を順に更新していき、最後の内部状態をそのまま出力します。</p>
+<figure class="widget" data-widget="md-chain"></figure>
+
+<p>ここで問題なのは、出力が「最後の内部状態そのもの」であることです。出力を知っている人は、その続きから計算を再開できます。「長さ拡張を表示する」を押すと、何が起きるかが分かります。</p>
+<h3 id="32-実際に偽造する">3.2 実際に偽造する</h3>
+<p>サーバが、鍵 k を使って tag = SHA-256(k ‖ m) をメッセージ m に添えているとします。攻撃者は m と tag を知っていて、k は知りません。それでも、m の後ろに好きな文字列を付け足したメッセージの正しいタグを作れます。</p>
+<figure class="widget" data-widget="length-ext"></figure>
+
+<p>攻撃者がやったのは、次の3つだけです。</p>
+<ol>
+<li>元のメッセージの後ろに、SHA-256 が内部で付けるはずだったパディング（0x80、0 の並び、長さ）を付ける。そのためには鍵の長さが必要だが、1〜64 を全部試せば済む</li>
+<li>tag を内部状態として読み込み、付け足したい文字列の分だけ圧縮関数を回す</li>
+<li>その結果を、新しいメッセージのタグとして提出する</li>
+</ol>
+<h3 id="33-防ぎ方">3.3 防ぎ方</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>長さ拡張に強い理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HMAC（§4）</td>
+<td>外側にもう一度ハッシュを掛けるので、出力から内側の状態に戻れない</td>
+</tr>
+<tr>
+<td>SHA-3、KMAC</td>
+<td>スポンジ構造で、出力に使わない内部状態（capacity）が隠されている</td>
+</tr>
+<tr>
+<td>SHA-512/256 などの切り詰め版</td>
+<td>出力が内部状態の一部しか含まないので、続きを計算できない</td>
+</tr>
+</tbody>
+</table>
+<p>H(k ‖ m) のように自作で鍵を混ぜるのは避け、標準の MAC（HMAC など）を使う、というのが実務の答えです。</p>
+<div class="sum">
+<ul>
+<li>Merkle-Damgård 構造のハッシュは、出力が最後の内部状態そのものなので、続きを計算できてしまう</li>
+<li>そのため H(鍵 ‖ m) は MAC にならない。鍵を知らなくても、メッセージを付け足したタグが作れる</li>
+<li>防ぐには HMAC などの、MAC として設計・証明されたものを使う。次の §4 で、MAC の定義と HMAC を見る</li>
+</ul>
+</div>
+<h2 id="s4">§4 MAC: 鍵付きの改ざん検知</h2>
+<div class="q">
+<p>MAC が「安全」とは、正確には何を意味するのか。それを満たす MAC は、どう作るのか。</p>
+</div>
+<h3 id="41-mac-の安全性-偽造できないこと">4.1 MAC の安全性: 偽造できないこと</h3>
+<p>MAC は、鍵 k とメッセージ m からタグ t = MAC(k, m) を作り、受信者は同じ鍵で t を確かめます。安全性は、第2回と同じくゲームで定義します。攻撃者には、好きなメッセージにタグを付けてもらえる能力（タグ生成オラクル）を与え、まだタグをもらっていないメッセージの正しいタグを作れたら勝ち、とします。</p>
+<figure class="widget" data-widget="euf-game"></figure>
+
+<div class="box def">
+<p><strong>定義（EUF-CMA 安全）</strong> タグ生成オラクルを使える、どんな PPT の攻撃者 A についても、新しいメッセージの正しいタグを作れる確率が無視できるとき、MAC は EUF-CMA 安全（選択メッセージ攻撃のもとで存在的偽造不能）であるという。</p>
+</div>
+<p>「存在的」とは、意味のあるメッセージでなくても、どんな新しいメッセージでも偽造できたら負け、という厳しい条件のことです。さらに、既存のメッセージに別の正しいタグを作ることも禁じたものを、強い偽造不能性（SUF-CMA）と呼びます。§5 の Encrypt-then-MAC では、こちらが必要になります。</p>
+<h3 id="42-hmac">4.2 HMAC</h3>
+<p>いちばん広く使われている MAC が HMAC です（RFC 2104）。ハッシュ関数を2回、鍵を内側と外側で混ぜて使います。</p>
+<figure class="widget" data-widget="hmac-diagram"></figure>
+
+<div class="math"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">HMAC</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.07153em;">K</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">m</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mord"><span class="delimsizing size1">(</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.07153em;">K</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">opad</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">∥</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mopen">((</span><span class="mord mathnormal" style="margin-right:0.07153em;">K</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord"><span class="mord mathrm">ipad</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">∥</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">m</span><span class="mclose">)</span><span class="mord"><span class="delimsizing size1">)</span></span></span></span></span></span></div>
+
+<p>外側のハッシュが内側の結果を包んでいるので、§3 の長さ拡張は効きません。HMAC は、圧縮関数が PRF として振る舞うという仮定のもとで、PRF（したがって安全な MAC）であることが証明されています。</p>
+<h3 id="43-そのほかの-mac">4.3 そのほかの MAC</h3>
+<table>
+<thead>
+<tr>
+<th>MAC</th>
+<th>材料</th>
+<th>特徴</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HMAC-SHA256</td>
+<td>ハッシュ関数</td>
+<td>汎用。TLS の鍵導出、JWT（HS256）、API の署名などで広く使われる</td>
+</tr>
+<tr>
+<td>CBC-MAC</td>
+<td>ブロック暗号</td>
+<td>長さが固定のときだけ安全。可変長では偽造できる</td>
+</tr>
+<tr>
+<td>CMAC</td>
+<td>ブロック暗号</td>
+<td>CBC-MAC の可変長の問題を直したもの（NIST SP 800-38B）</td>
+</tr>
+<tr>
+<td>GHASH、Poly1305</td>
+<td>有限体の多項式</td>
+<td>1回限りの鍵で非常に速い。暗号化と組み合わせて AEAD の中で使う（§6）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44-検証は定数時間で比較する">4.4 検証は定数時間で比較する</h3>
+<p>タグの検証で、先頭から1バイトずつ比べて、違ったらすぐ返す実装（Java の Arrays.equals、文字列の equals など）を使うと、何バイト目まで合っていたかが応答時間に出てしまいます。攻撃者は、1バイトずつ正しいタグを当てられます（第7回で実演します）。比較は、最後まで同じ時間をかける関数で行います。</p>
+<table>
+<thead>
+<tr>
+<th>言語</th>
+<th>定数時間の比較</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java</td>
+<td>MessageDigest.isEqual</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>hmac.compare_digest</td>
+</tr>
+<tr>
+<td>Go</td>
+<td>crypto/subtle.ConstantTimeCompare</td>
+</tr>
+</tbody>
+</table>
+<div class="sum">
+<ul>
+<li>MAC の安全性は、タグを付けてもらえる攻撃者でも、新しいメッセージのタグを偽造できないこと（EUF-CMA）</li>
+<li>HMAC はハッシュを2回使うことで長さ拡張を防ぎ、PRF として証明されている</li>
+<li>タグの検証は定数時間で比較する</li>
+<li>MAC で改ざん検知、暗号化で秘匿。では2つをどう組み合わせればよいのか。次の §5 で、その順序が安全性を左右することを見る</li>
+</ul>
+</div>
+<h2 id="s5">§5 暗号化と MAC の組み合わせ: 順序とパディングオラクル</h2>
+<div class="q">
+<p>暗号化と MAC を両方使うとき、「先に暗号化するか、先に MAC を付けるか」で何が変わるのか。</p>
+</div>
+<h3 id="51-3つの組み合わせ方">5.1 3つの組み合わせ方</h3>
+<figure class="widget" data-widget="compose"></figure>
+
+<table>
+<thead>
+<tr>
+<th>組み合わせ方</th>
+<th>送るもの</th>
+<th>一般的な安全性</th>
+<th>使われた例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Encrypt-and-MAC</td>
+<td>Enc(m) と MAC(m)</td>
+<td>保証されない。MAC から平文の情報が漏れうる</td>
+<td>SSH</td>
+</tr>
+<tr>
+<td>MAC-then-Encrypt</td>
+<td>Enc(m ‖ MAC(m))</td>
+<td>暗号化の方式次第。CBC と組み合わせると危険</td>
+<td>SSL/TLS 1.2 以前の CBC モード</td>
+</tr>
+<tr>
+<td>Encrypt-then-MAC</td>
+<td>Enc(m) と MAC(Enc(m))</td>
+<td>安全（下の定理）</td>
+<td>IPsec、TLS の拡張（RFC 7366）</td>
+</tr>
+</tbody>
+</table>
+<div class="box thm">
+<p><strong>定理（Bellare-Namprempre、2000年）</strong> 暗号化が IND-CPA 安全で、MAC が強い偽造不能性（SUF-CMA）を満たすなら、Encrypt-then-MAC は IND-CCA 安全で、暗号文の改ざんも検知できる。</p>
+</div>
+<p>直感的には、Encrypt-then-MAC では受信者がまずタグを確かめ、改ざんされた暗号文は復号せずに捨てます。攻撃者が暗号文をいじっても、復号処理そのものに届かないので、復号の振る舞いから何も学べません。逆に MAC-then-Encrypt では、改ざんされた暗号文でもまず復号してしまいます。その途中の反応が漏れると、次に見る攻撃が成立します。</p>
+<h3 id="52-パディングオラクル攻撃">5.2 パディングオラクル攻撃</h3>
+<p>CBC には、平文の長さを 16 バイトの倍数に揃えるパディングがありました（PKCS#7: 足りないバイト数 k の値 k を k 個並べる）。MAC-then-Encrypt で CBC を使うサーバは、受け取った暗号文を復号したあと、まずパディングが正しい形かを確かめ、次に MAC を確かめます。このとき、2つの失敗を区別できる応答（エラーの種類、処理時間）を返してしまうと、攻撃者は「パディングが正しいか」という1ビットの情報を得られます。この1ビットを返してくれる存在を、パディングオラクルと呼びます。</p>
+<p>原理は、CBC の復号式 P = D_k(C) ⊕ C′（C′ は1つ前の暗号文ブロック）にあります。</p>
+<ol>
+<li>攻撃者は、解読したいブロック C の前に、自分で作った偽のブロック C′ を置いて送る</li>
+<li>サーバは D_k(C) ⊕ C′ を計算して、パディングを確かめる。D_k(C) は鍵がないと計算できない「中間値」</li>
+<li>攻撃者は C′ の最後のバイトを 0〜255 まで変えながら送り、「パディングが正しい」と言われる値を探す</li>
+<li>正しいと言われたら、復号結果の最後のバイトは 0x01 のはずなので、中間値の最後のバイト = その値 ⊕ 0x01 と分かる</li>
+<li>本物の前のブロックと XOR すれば、平文の最後のバイトが分かる。次は末尾 2 バイトを 0x02 0x02 にするように調整して、1つ前のバイトへ進む</li>
+</ol>
+<p>1 バイトあたり最大 256 回、平均 128 回の問い合わせで済むので、16 バイトのブロックは数千回の問い合わせで丸ごと読めます。下の図で、実際に解いてみてください。サーバの実装を AEAD に切り替えると、攻撃が一歩も進まなくなることも確かめてください。</p>
+<figure class="widget" data-widget="padding-oracle"></figure>
+
+<h3 id="53-実際に起きたこと">5.3 実際に起きたこと</h3>
+<table>
+<thead>
+<tr>
+<th>年</th>
+<th>攻撃</th>
+<th>何が漏れたか</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2002</td>
+<td>Vaudenay のパディングオラクル攻撃</td>
+<td>CBC のパディング検査の成否</td>
+</tr>
+<tr>
+<td>2010</td>
+<td>ASP.NET のパディングオラクル</td>
+<td>Web アプリの暗号化された状態データ。サーバの設定ファイルの読み出しにまで発展した</td>
+</tr>
+<tr>
+<td>2013</td>
+<td>Lucky Thirteen</td>
+<td>エラーの種類は同じでも、パディング検査と MAC 計算の処理時間の差</td>
+</tr>
+<tr>
+<td>2014</td>
+<td>POODLE</td>
+<td>SSL 3.0 の CBC パディングの検査が不完全だったこと</td>
+</tr>
+</tbody>
+</table>
+<p>教訓は2つあります。1つ目は、エラーメッセージを揃えても、処理時間の差で同じことが起きる（Lucky Thirteen）ことです。2つ目は、これらはすべて「復号してから検証する」構造が原因で、Encrypt-then-MAC や AEAD なら原理的に起きないことです。TLS 1.3 は、この反省から CBC モードをすべて廃止し、AEAD だけにしました。</p>
+<div class="sum">
+<ul>
+<li>暗号化と MAC は、Encrypt-then-MAC（暗号文に MAC を付け、検証してから復号）が安全</li>
+<li>「復号してから検証する」構造では、復号処理の反応（エラーの種類、時間）が漏れ、パディングオラクル攻撃で平文が読まれる</li>
+<li>組み合わせ方を自分で選ぶこと自体が事故のもとになる。次の §6 で、最初から両方をまとめて設計した AEAD を見る</li>
+</ul>
+</div>
+<h2 id="s6">§6 AEAD: 秘匿と改ざん検知を1つにまとめる</h2>
+<div class="q">
+<p>暗号化と MAC を毎回正しく組み合わせる代わりに、最初から両方を満たす部品として使える標準はあるか。その使い方の条件は何か。</p>
+</div>
+<h3 id="61-aead-とは">6.1 AEAD とは</h3>
+<p>認証付き暗号（AEAD: Authenticated Encryption with Associated Data）は、次のインターフェースを持つ1つの部品です。</p>
+<pre><code>暗号化: (C, tag) = Seal(K, ノンス N, 平文 P, 関連データ AD)
+復号  : P または「失敗」 = Open(K, N, C, tag, AD)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>守るもの</th>
+<th>平文 P</th>
+<th>関連データ AD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>秘匿性（読まれない）</td>
+<td>○</td>
+<td>×（平文のまま送る）</td>
+</tr>
+<tr>
+<td>完全性（変えられない）</td>
+<td>○</td>
+<td>○</td>
+</tr>
+</tbody>
+</table>
+<p>関連データは、暗号化はしないが改ざんは検知したいデータです。たとえばパケットのヘッダ（宛先やシーケンス番号）は、中継機器が読めないと困るので暗号化できませんが、書き換えられては困ります。そういうものを AD に入れます。</p>
+<p>AEAD の安全性は、「IND-CPA（秘匿性）」と「暗号文の完全性（改ざんした暗号文は必ず『失敗』になる）」の両方を満たすこととして定義され、両方を満たせば IND-CCA も満たします。</p>
+<h3 id="62-2つの標準">6.2 2つの標準</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>AES-GCM</th>
+<th>ChaCha20-Poly1305</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>暗号化の部分</td>
+<td>AES の CTR モード（第3回）</td>
+<td>ChaCha20（第3回 §5）</td>
+</tr>
+<tr>
+<td>改ざん検知の部分</td>
+<td>GHASH（GF(2^128) の多項式）</td>
+<td>Poly1305（素数 2^130 − 5 を法とする多項式）</td>
+</tr>
+<tr>
+<td>ノンス</td>
+<td>96 ビット</td>
+<td>96 ビット</td>
+</tr>
+<tr>
+<td>速さ</td>
+<td>AES 専用命令がある CPU で非常に速い</td>
+<td>専用命令なしでも速く、定数時間で実装しやすい</td>
+</tr>
+<tr>
+<td>規格</td>
+<td>NIST SP 800-38D</td>
+<td>RFC 8439</td>
+</tr>
+</tbody>
+</table>
+<p>どちらも、第3回の CTR 型の暗号化に、第4回の Carter-Wegman 型の MAC を、暗号化した後に掛ける（Encrypt-then-MAC の形）構造です。TLS 1.3 では、この2つが中心の選択肢です。</p>
+<h3 id="63-ノンスの条件と破ったときに壊れるもの">6.3 ノンスの条件と、破ったときに壊れるもの</h3>
+<p>AEAD のほぼ唯一の使用条件は、「同じ鍵で、同じノンスを二度と使わない」ことです。破ると、次のように壊れます。</p>
+<table>
+<thead>
+<tr>
+<th>壊れるもの</th>
+<th>AES-GCM</th>
+<th>ChaCha20-Poly1305</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>秘匿性</td>
+<td>同じ鍵の列が使われ、2つの平文の XOR が漏れる（第2回のワンタイムパッドの再利用）</td>
+<td>同じ</td>
+</tr>
+<tr>
+<td>完全性</td>
+<td>認証鍵 H が多項式の根として求まり、以後、好きなメッセージを偽造できる</td>
+<td>1回限りの Poly1305 鍵が再利用され、偽造が可能になる</td>
+</tr>
+</tbody>
+</table>
+<p>GCM のノンス再利用は、秘匿性だけでなく改ざん検知まで壊す点が重大です。ノンスの作り方は2通りあります。</p>
+<table>
+<thead>
+<tr>
+<th>作り方</th>
+<th>条件</th>
+<th>注意</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>カウンタ（0, 1, 2, …）</td>
+<td>状態を正しく保存し、再起動やバックアップからの復元で巻き戻さない</td>
+<td>複数のサーバが同じ鍵を使うと重複しやすい</td>
+</tr>
+<tr>
+<td>96 ビットの乱数</td>
+<td>誕生日の確率で、同じ鍵での暗号化回数に上限がある</td>
+<td>NIST は 2^32 回までとしている</td>
+</tr>
+</tbody>
+</table>
+<figure class="widget" data-widget="nonce-budget"></figure>
+
+<p>ノンスの管理が難しい場面のために、重複しても被害が限定される AES-GCM-SIV（RFC 8452）もあります。ノンスが重複しても、漏れるのは「同じ平文を同じノンスで暗号化した」という事実だけです。</p>
+<h3 id="64-java-での正しい使い方">6.4 Java での正しい使い方</h3>
+<pre><code class="language-java">// 鍵は KeyGenerator（または KDF）で作り、ノンスは暗号化ごとに必ず新しくする
+byte[] nonce = new byte[12];
+new SecureRandom().nextBytes(nonce);                 // 乱数ノンス（同じ鍵で 2^32 回まで）
+Cipher cipher = Cipher.getInstance(&quot;AES/GCM/NoPadding&quot;);
+cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, nonce));
+cipher.updateAAD(header);                            // 関連データ（暗号化しないが改ざんを検知）
+byte[] ct = cipher.doFinal(plaintext);              // 末尾に 16 バイトのタグが付く
+// 送るもの: nonce ‖ ct（ノンスは秘密ではない）
+</code></pre>
+<p>Java の GCM 実装は、同じ Cipher オブジェクトで同じ鍵とノンスの組を再び使おうとすると、例外で止めてくれます。ただし、オブジェクトをまたいだ重複までは検知できないので、ノンスの生成は設計で保証する必要があります。</p>
+<div class="sum">
+<ul>
+<li>AEAD は、秘匿性と改ざん検知を1つにまとめた部品。関連データは暗号化せずに改ざんだけを検知する</li>
+<li>標準は AES-GCM と ChaCha20-Poly1305。どちらも CTR 型の暗号化に MAC を後から掛ける構造</li>
+<li>唯一にして最大の条件は「同じ鍵でノンスを重複させない」。GCM では、破ると改ざん検知まで壊れる</li>
+<li>最後の §7 では、AEAD に渡す鍵そのものを、別の鍵やパスワードから作る方法を見る</li>
+</ul>
+</div>
+<h2 id="s7">§7 KDF とパスワード: 鍵を作る</h2>
+<div class="q">
+<p>AEAD に渡す鍵は、どうやって作るのか。共有した秘密値や、人間が覚えるパスワードから鍵を作るときは、何に気をつければよいのか。</p>
+</div>
+<h3 id="71-2種類の材料">7.1 2種類の材料</h3>
+<table>
+<thead>
+<tr>
+<th>材料</th>
+<th>例</th>
+<th>性質</th>
+<th>使うもの</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>高エントロピーだが形が不揃いな秘密</td>
+<td>Diffie-Hellman の共有値（第5回）、マスター鍵</td>
+<td>推測はできないが、偏りがあったり長さが合わなかったりする</td>
+<td>HKDF</td>
+</tr>
+<tr>
+<td>低エントロピーの秘密</td>
+<td>人間が覚えるパスワード</td>
+<td>候補を順に試せば当たりうる</td>
+<td>パスワードハッシュ（Argon2、scrypt、bcrypt、PBKDF2）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-hkdf-抽出してから展開する">7.2 HKDF: 抽出してから展開する</h3>
+<p>HKDF（RFC 5869）は、HMAC を2段階で使います。</p>
+<table>
+<thead>
+<tr>
+<th>段階</th>
+<th>計算</th>
+<th>役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>抽出（extract）</td>
+<td>PRK = HMAC(salt, 入力の秘密)</td>
+<td>偏りのある秘密から、一様に近い鍵を1つ取り出す</td>
+</tr>
+<tr>
+<td>展開（expand）</td>
+<td>OKM = HMAC(PRK, info ‖ カウンタ) を必要な長さまで</td>
+<td>1つの鍵から、用途ごとに独立した複数の鍵を作る</td>
+</tr>
+</tbody>
+</table>
+<p>info に「client write key」「server write key」のような用途の名前を入れることで、同じ材料から互いに無関係な鍵を作れます。TLS 1.3 の鍵スケジュール（第7回）は、HKDF をこの形で何段も使っています。</p>
+<h3 id="73-パスワード-わざと遅くする">7.3 パスワード: わざと遅くする</h3>
+<p>パスワードから鍵を作る（あるいはパスワードを保存する）ときの敵は、データベースを盗んだ攻撃者による「候補を順に試す」攻撃です。パスワードの候補は少ないので、SHA-256 のような速いハッシュでは、GPU で毎秒何十億回も試されてしまいます。</p>
+<p>対策は2つで、どちらも欠かせません。</p>
+<ol>
+<li><strong>塩（salt）</strong>: ユーザーごとに違う乱数を混ぜる。同じパスワードのユーザーをまとめて破られることと、事前計算した表（レインボーテーブル）を防ぐ</li>
+<li><strong>わざと遅く、重くする</strong>: 1回の計算に時間とメモリを使う関数で、攻撃者の1回の試行を高くつかせる</li>
+</ol>
+<figure class="widget" data-widget="kdf-cost"></figure>
+
+<table>
+<thead>
+<tr>
+<th>関数</th>
+<th>遅くする仕組み</th>
+<th>備考</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PBKDF2</td>
+<td>ハッシュを何十万回も繰り返す</td>
+<td>メモリを使わないので、GPU や専用回路で並列化されやすい</td>
+</tr>
+<tr>
+<td>bcrypt</td>
+<td>繰り返し回数（コスト）を指定</td>
+<td>入力が 72 バイトまでという制限がある</td>
+</tr>
+<tr>
+<td>scrypt</td>
+<td>大きなメモリを使う</td>
+<td>メモリを使うので、専用回路での高速化が難しい</td>
+</tr>
+<tr>
+<td>Argon2id</td>
+<td>時間とメモリの両方を調整できる</td>
+<td>2015年のパスワードハッシュ競技の優勝方式（RFC 9106）。新規なら第一候補</td>
+</tr>
+</tbody>
+</table>
+<p>パラメータの目安は、OWASP の Password Storage Cheat Sheet が「Argon2id ならメモリ 19 MiB・反復 2 回・並列度 1 以上」「PBKDF2-HMAC-SHA256 なら 60 万回以上」といった値を示しています。ただし推奨値は計算機の進歩に合わせて更新されるので、採用時には最新版を確認してください。また、自分のサーバで1回のログインにかかる時間（数十〜数百ミリ秒）を測って決めるのが実務の進め方です。</p>
+<div class="sum">
+<ul>
+<li>高エントロピーの秘密からは HKDF（抽出してから展開）で用途ごとの鍵を作る</li>
+<li>パスワードは低エントロピーなので、塩と、わざと遅く重いハッシュ（Argon2id など）で守る</li>
+<li>遅くする工夫は攻撃者の手間を定数倍にするだけで、弱いパスワードは守りきれない</li>
+</ul>
+</div>
+<h2 id="この回のまとめ">この回のまとめ</h2>
+<table>
+<thead>
+<tr>
+<th>問い</th>
+<th>答え</th>
+<th>節</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>改ざん検知に何が要るか</td>
+<td>鍵を持つ人だけが作れるしるし（MAC）</td>
+<td>§1</td>
+</tr>
+<tr>
+<td>H(鍵 ‖ m) ではだめか</td>
+<td>長さ拡張で偽造される。HMAC を使う</td>
+<td>§3、§4</td>
+</tr>
+<tr>
+<td>暗号化と MAC の順序は</td>
+<td>Encrypt-then-MAC。復号してから検証するとパディングオラクルになる</td>
+<td>§5</td>
+</tr>
+<tr>
+<td>結局何を使うか</td>
+<td>AEAD（AES-GCM、ChaCha20-Poly1305）。ノンスは重複させない</td>
+<td>§6</td>
+</tr>
+<tr>
+<td>鍵はどう作るか</td>
+<td>秘密値からは HKDF、パスワードからは Argon2id など</td>
+<td>§7</td>
+</tr>
+</tbody>
+</table>
+<h2 id="演習問題">演習問題</h2>
+<h3 id="a-確認">A. 確認</h3>
+<ol>
+<li>原像困難性・第二原像困難性・衝突困難性の違いを、攻撃者に与えるものと探すものの違いとして説明せよ。256 ビット出力のとき、それぞれの一般的な攻撃の手間はいくらか</li>
+<li>ファイルのダウンロードページに SHA-256 の値が並んで載っている。これは何を守り、何を守らないか</li>
+<li>MAC と署名の違いを、「誰がしるしを作れるか」の観点で説明せよ</li>
+<li>Encrypt-then-MAC が安全で、MAC-then-Encrypt が危うい理由を、「受信者が最初に何をするか」の違いとして説明せよ</li>
+<li>AES-GCM でノンスを再利用したとき、秘匿性と完全性はそれぞれどうなるか</li>
+</ol>
+<h3 id="b-攻撃と設計">B. 攻撃と設計</h3>
+<ol start="6">
+<li>tag = SHA-256(k ‖ m) を使うシステムで、m = "amount=100" のタグから、"amount=100…&amp;amount=9999" のタグを作る手順を説明せよ（パディングの中身も含めて）</li>
+<li>パディングオラクル攻撃で、最後のバイトを解くときに「パディングが正しい」と言われる値が2つ見つかることがある。なぜか、どう見分けるか</li>
+<li>1台あたり毎秒 1,000 件を AES-GCM（ランダムな 96 ビットノンス）で暗号化するサーバが 100 台あり、同じ鍵を共有している。NIST の上限 2^32 回に何日で達するか。どう設計し直すか</li>
+<li>新しい Web サービスのパスワード保存方式を設計せよ。関数、パラメータの決め方、塩の扱い、既存の弱い方式からの移行方法を含めること</li>
+</ol>
+<h3 id="c-実装">C. 実装</h3>
+<ol start="10">
+<li>SHA-256 の長さ拡張攻撃を実装し、H(k ‖ m) 型の MAC を偽造せよ（Cryptopals Set 4 の問題 29 は SHA-1 版）</li>
+<li>CBC のパディングオラクル攻撃を実装し、オラクルだけを使って暗号文を復号せよ（Cryptopals Set 3 の問題 17）</li>
+<li>HMAC を標準ライブラリを使わずに実装し、RFC 4231 のテストベクタで確かめよ</li>
+</ol>
+<h2 id="解答と解説">解答と解説</h2>
+<h3 id="a-確認_1">A. 確認</h3>
+<ol>
+<li>原像: 出力 y を与えられ、H(x) = y となる x を探す（2^256）。第二原像: 入力 x を与えられ、同じ出力になる別の x′ を探す（2^256）。衝突: 何も与えられず、同じ出力になる任意の2つを探す（誕生日攻撃で 2^128）</li>
+<li>偶然の破損（ダウンロードの失敗）は検出できる。ただしページ自体が改ざんされれば、ファイルとハッシュ値を両方差し替えられるので、意図的な改ざんは守れない。署名付きのハッシュ値（第6回）が必要</li>
+<li>MAC は鍵を共有する全員が作れるので、受信者は「送信者か自分のどちらか」が作ったことしか分からない。署名は秘密鍵を持つ1人だけが作れるので、第三者にも「その人が作った」と示せる</li>
+<li>Encrypt-then-MAC の受信者は、最初にタグを検証し、失敗すれば復号しない。MAC-then-Encrypt は最初に復号するので、改ざんされた暗号文に対する復号処理の反応（パディングエラー、処理時間）が漏れる</li>
+<li>秘匿性: 同じ鍵の列が使われ、2つの平文の XOR が漏れる。完全性: GHASH の鍵 H が求まり、任意のメッセージのタグを偽造できるようになる</li>
+</ol>
+<h3 id="b-攻撃と設計_1">B. 攻撃と設計</h3>
+<ol start="6">
+<li>鍵の長さ L を推測する。グルー（パディング）= 0x80 ‖ 0x00…0x00 ‖（(L + 10) × 8 を 64 ビットで）で、L + 10 + グルーの長さが 64 の倍数になるようにする。tag を SHA-256 の内部状態として読み込み、処理済みの長さを L + 10 + グルーの長さとして "&amp;amount=9999" を処理すれば、"amount=100" ‖ グルー ‖ "&amp;amount=9999" のタグになる。L は 1〜64 程度を順に試す</li>
+<li>本物の平文の末尾が偶然 0x02 だった場合、偽ブロックで最後のバイトを 0x02 にすると「0x02 0x02」として正しいパディングになる。見分けるには、正しいと言われたあと、最後から2番目のバイトを変えて再度問い合わせる。それでも正しいなら、最後のバイトは 0x01 だった</li>
+<li>合計で毎秒 10^5 件。2^32 ≈ 4.3 × 10^9 なので、約 4.3 × 10^4 秒 ≈ 半日で達する。サーバごと・期間ごとに鍵を分ける（HKDF で導出）、ノンスにサーバ ID と各サーバのカウンタを組み合わせて重複を構造的に防ぐ、AES-GCM-SIV を使う、などで設計し直す</li>
+<li>例: Argon2id、メモリと反復回数は OWASP の最新の推奨値を下限に、ログイン1回が数十〜数百ミリ秒になるよう自社サーバで測定して決める。塩はユーザーごとに 16 バイト以上の乱数を、ハッシュ値と一緒に保存（エンコード済みの文字列に含める）。移行は、次回ログイン時に検証が成功したら新方式で保存し直す。ログインしないユーザーは、古いハッシュ値を新方式でさらに包む（二重ハッシュ）ことで、一括で守る</li>
+</ol>
+<h3 id="c-実装のポイント">C. 実装のポイント</h3>
+<ul>
+<li>問題10: 先に「自分で全体を計算した SHA-256」と「状態から再開した計算」が一致するかを確かめてから、攻撃に進むと切り分けやすくなります</li>
+<li>問題11: 最初のブロックを解くときは、前のブロックとして IV を使います。最後のブロックの平文には、パディングのバイトがそのまま見えます</li>
+<li>問題12: 鍵がブロック長（64 バイト）より長い場合は、先にハッシュしてから使う点を忘れやすいです</li>
+</ul>
+<h2 id="読む">読む</h2>
+<ul>
+<li>Katz &amp; Lindell: ハッシュ関数と MAC、認証付き暗号の各章</li>
+<li>Boneh &amp; Shoup（無料）: メッセージの完全性、衝突困難性、認証付き暗号の章</li>
+<li>Bellare &amp; Namprempre (2000)、Krawczyk (2001): 暗号化と MAC の組み合わせ方の原典</li>
+<li>Vaudenay (2002): パディングオラクル攻撃の原論文</li>
+<li>一次資料: RFC 2104（HMAC）、RFC 5869（HKDF）、NIST SP 800-38D（GCM）、RFC 8439（ChaCha20-Poly1305）、RFC 9106（Argon2）、FIPS 202（SHA-3）</li>
+</ul>
+<h3 id="次回予告-第5回-公開鍵暗号">次回予告: 第5回 公開鍵暗号</h3>
+<p>ここまでの暗号は、すべて「事前に共通鍵を共有している」ことが前提でした。初めて通信する相手と、盗聴されている回線でどうやって鍵を共有するのか。次回は、第1回の数学（逆元、オイラーの定理、離散対数）を使って、この問題を解く公開鍵暗号を扱います。</p>
 
 <nav class="pager" aria-label="前後の回"><a class="pager-prev" href="03-symmetric.html"><small>前の回</small>第3回 共通鍵暗号</a><a class="pager-next" href="05-public-key.html"><small>次の回</small>第5回 公開鍵暗号</a></nav>
 </article>
@@ -84,6 +866,9 @@
 <p>図やラボの計算はすべてブラウザ内で行われます。教科書 RSA などの例は学習用で、実際の暗号化には使えません。</p>
 </div></footer>
 <script src="../assets/widgets.js" defer></script>
+<script src="../assets/w/aes.js" defer></script>
+<script src="../assets/w/sha256.js" defer></script>
+<script src="../assets/w/lec04.js" defer></script>
 <script src="../assets/site.js" defer></script>
 </body>
 </html>

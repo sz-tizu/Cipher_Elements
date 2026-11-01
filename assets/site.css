@@ -364,3 +364,11 @@ dialog.search::backdrop { background: rgb(15 18 30 / 0.45); }
 .img-box canvas { width: 100%; height: auto; image-rendering: pixelated; border-radius: 6px; border: 1px solid var(--line); }
 .img-box figcaption { font-size: 12.5px; color: var(--muted); text-align: center; }
 .w-out.cbc { font-size: 13px; }
+
+/* パディングオラクル（assets/w/lec04.js） */
+.po { display: grid; gap: 4px; margin-bottom: 6px; overflow-x: auto; }
+.po-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.po-row { display: grid; grid-template-columns: repeat(16, minmax(2.1em, 1fr)); gap: 2px; font-family: var(--mono); font-size: 12px; min-width: max-content; }
+.po-cell { text-align: center; padding: 5px 0; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); }
+.po-cell.done { background: var(--good-soft); border-color: var(--good); }
+.po-cell.cur { border-color: var(--hot); background: var(--hot-soft); font-weight: 700; }
